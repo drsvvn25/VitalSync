@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin cPanel – VitalSync</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        :root { --admin-bg: #0f172a; --admin-card: #1e293b; --admin-text: #f8fafc; }
+        body.admin-mode { background-color: var(--admin-bg); color: var(--admin-text); font-family: 'Inter', sans-serif; }
+        .sidebar { width: 260px; height: 100vh; position: fixed; background: #020617; border-right: 1px solid #1e293b; padding: 2rem 1rem; }
+        .main-content { margin-left: 260px; padding: 2rem; }
+        .admin-card { background: var(--admin-card); border: 1px solid #334155; border-radius: 12px; padding: 1.5rem; }
+        .sidebar-link { display: block; padding: 12px 15px; color: #94a3b8; text-decoration: none; border-radius: 8px; margin-bottom: 5px; transition: 0.3s; }
+        .sidebar-link:hover, .sidebar-link.active { background: #1d4ed8; color: #fff; }
+        .stat-card { border-left: 4px solid #3b82f6; }
+        .table { color: #cbd5e1; }
+        .table thead { background: #334155; color: #f8fafc; }
+        .vs-badge { padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
+        .bg-doc { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
+    </style>
+</head>
+<body class="admin-mode">
+    <div class="sidebar">
+        <h4 class="fw-700 text-blue-500 mb-4 px-2">Vital<span class="text-white">Sync</span> <span class="badge bg-danger fs-xs" style="font-size: 10px; vertical-align: middle;">CPANEL</span></h4>
+        <nav>
+            <a href="#" class="sidebar-link active" onclick="showSection('dashboard')"><i class="fas fa-chart-line me-2"></i> Dashboard</a>
+            <a href="#" class="sidebar-link" onclick="showSection('doctors')"><i class="fas fa-user-md me-2"></i> Manage Doctors</a>
+            <a href="#" class="sidebar-link" onclick="showSection('patients')"><i class="fas fa-users me-2"></i> Manage Patients</a>
+            <a href="#" class="sidebar-link" onclick="showSection('appointments')"><i class="fas fa-calendar-check me-2"></i> Appointments</a>
+            <a href="#" class="sidebar-link" onclick="showSection('records')"><i class="fas fa-file-medical me-2"></i> Medical Records</a>
+            <a href="#" class="sidebar-link" onclick="showSection('transactions')"><i class="fas fa-wallet me-2"></i> Transactions</a>
+            <a href="#" class="sidebar-link" onclick="showSection('clinics')"><i class="fas fa-hospital me-2"></i> Clinics & Facilities</a>
+            <a href="#" class="sidebar-link" onclick="logout()"><i class="fas fa-sign-out-alt me-2"></i> Logout</a>
+        </nav>
+    </div>
+
+    <main class="main-content">
+        <!-- Dashboard Overview -->
+        <section id="dashboard-section">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="fw-700">System Overview</h2>
+                <button class="btn btn-primary btn-sm" onclick="loadStats()"><i class="fas fa-sync me-1"></i> Refresh Stats</button>
+            </div>
+            
+            <div class="row g-3 mb-4">
+                <div class="col-md-3">
+                    <div class="admin-card stat-card">
+                        <p class="text-muted small mb-1">Total Patients</p>
+                        <h3 class="fw-700 mb-0" id="stat-patients">...</h3>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="admin-card stat-card" style="border-left-color: #10b981;">
+                        <p class="text-muted small mb-1">Active Doctors</p>
+                        <h3 class="fw-700 mb-0" id="stat-doctors">...</h3>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="admin-card stat-card" style="border-left-color: #f59e0b;">
+                        <p class="text-muted small mb-1">Appointments</p>
+                        <h3 class="fw-700 mb-0" id="stat-appointments">...</h3>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="admin-card stat-card" style="border-left-color: #ef4444;">
+                        <p class="text-muted small mb-1">Total Revenue</p>
+                        <h3 class="fw-700 mb-0" id="stat-revenue">₹0</h3>
+                    </div>
+                </div>
+            </div>
+
+            <div class="admin-card">
+                <h5 class="fw-600 mb-3">System Health Status</h5>
+                <div class="alert alert-info bg-dark border-secondary text-white small">
+                    <i class="fas fa-info-circle me-2"></i> All backend services are operational. Database latency is within normal parameters (12ms).
+                </div>
+            </div>
+        </section>
+
+        <!-- Doctors Management -->
+        <section id="doctors-section" class="d-none">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="fw-700">Manage Doctors</h2>
+                <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#addDoctorModal"><i class="fas fa-plus me-1"></i> Add Doctor</button>
+            </div>
+
+            <div class="admin-card">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Specialization</th>
+                                <th>Clinic</th>
+                                <th>Contact</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="doctors-list"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Patients Management -->
+        <section id="patients-section" class="d-none">
+            <h2 class="fw-700 mb-4">Manage Patients</h2>
+            <div class="admin-card">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead>
+                            <tr>
+                                <th>Patient Name</th>
+                                <th>Email/Phone</th>
+                                <th>Details</th>
+                                <th>Address</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="patients-list"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Appointments View -->
+        <section id="appointments-section" class="d-none">
+            <h2 class="fw-700 mb-4">All Appointments</h2>
+            <div class="admin-card">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead>
+                            <tr>
+                                <th>Date/Time</th>
+                                <th>Patient</th>
+                                <th>Doctor</th>
+                                <th>Status</th>
+                                <th>Reason</th>
+                            </tr>
+                        </thead>
+                        <tbody id="appointments-list"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Transactions View -->
+        <section id="transactions-section" class="d-none">
+            <h2 class="fw-700 mb-4">Financial Transactions</h2>
+            <div class="admin-card">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Patient</th>
+                                <th>Type</th>
+                                <th>Amount</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody id="transactions-list"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Medical Records View -->
+        <section id="records-section" class="d-none">
+            <h2 class="fw-700 mb-4">Master Medical Records</h2>
+            <div class="admin-card">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead>
+                            <tr>
+                                <th>Date/ID</th>
+                                <th>Patient</th>
+                                <th>Doctor</th>
+                                <th>Diagnosis</th>
+                                <th>Prescription</th>
+                            </tr>
+                        </thead>
+                        <tbody id="records-list"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Add Doctor Modal -->
+    <div class="modal fade" id="addDoctorModal" tabindex="-1">
+        <div class="modal-dialog modal-dark">
+            <div class="modal-content bg-dark text-white border-secondary">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title">Register New Doctor</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="add-doctor-form">
+                        <div class="mb-2">
+                            <label class="small text-muted">Full Name</label>
+                            <input type="text" class="form-control bg-secondary text-white border-0" id="doc-name" required>
+                        </div>
+                        <div class="mb-2">
+                            <label class="small text-muted">Email</label>
+                            <input type="email" class="form-control bg-secondary text-white border-0" id="doc-email" required>
+                        </div>
+                        <div class="mb-2">
+                            <label class="small text-muted">Specialization</label>
+                            <input type="text" class="form-control bg-secondary text-white border-0" id="doc-spec" required placeholder="e.g. Cardiologist">
+                        </div>
+                        <div class="mb-3">
+                            <label class="small text-muted">Experience (Years)</label>
+                            <input type="number" class="form-control bg-secondary text-white border-0" id="doc-exp">
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Create Doctor Account</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/auth.js"></script>
+    <script>
+        // Check if Admin
+        const user = getUser();
+        if (!user || user.role !== 'admin') {
+            window.location.href = 'login.html';
+        }
+
+        async function loadStats() {
+            try {
+                const res = await apiFetch('/admin/stats');
+                if (res.ok) {
+                    const s = res.data.stats;
+                    document.getElementById('stat-patients').textContent = s.totalPatients;
+                    document.getElementById('stat-doctors').textContent = s.totalDoctors;
+                    document.getElementById('stat-appointments').textContent = s.totalAppointments;
+                    document.getElementById('stat-revenue').textContent = '₹' + s.totalRevenue;
+                }
+            } catch (err) { console.error(err); }
+        }
+
+        async function loadDoctors() {
+            try {
+                const res = await apiFetch('/admin/doctors');
+                if (res.ok) {
+                    const list = document.getElementById('doctors-list');
+                    list.innerHTML = res.data.doctors.map(d => `
+                        <tr>
+                            <td><div class="fw-600">${d.name}</div><div class="fs-xs text-muted">${d.email}</div></td>
+                            <td><span class="vs-badge bg-doc">${d.specialization}</span></td>
+                            <td>${d.clinic_name || 'N/A'}</td>
+                            <td>${d.phone || '-'}</td>
+                            <td><button class="btn btn-outline-danger btn-xs" onclick="deleteUser(${d.id})"><i class="fas fa-trash"></i></button></td>
+                        </tr>
+                    `).join('');
+                }
+            } catch (err) { console.error(err); }
+        }
+
+        async function loadPatients() {
+            try {
+                const res = await apiFetch('/admin/patients');
+                if (res.ok) {
+                    const list = document.getElementById('patients-list');
+                    list.innerHTML = res.data.patients.map(p => `
+                        <tr>
+                            <td><div class="fw-600 text-white">${p.name}</div></td>
+                            <td><div class="small">${p.email}</div><div class="fs-xs text-muted">${p.phone || '-'}</div></td>
+                            <td><span class="vs-badge bg-doc">${p.gender || 'N/A'}</span>, ${p.age || 'N/A'} yrs, ${p.blood_group || '-'}</td>
+                            <td><div class="small">${p.address || '-'}</div></td>
+                            <td><button class="btn btn-outline-danger btn-xs" onclick="deleteUser(${p.id})"><i class="fas fa-trash"></i></button></td>
+                        </tr>
+                    `).join('');
+                }
+            } catch (err) { console.error(err); }
+        }
+
+        async function loadAppointments() {
+            try {
+                const res = await apiFetch('/admin/appointments');
+                if (res.ok) {
+                    const list = document.getElementById('appointments-list');
+                    list.innerHTML = res.data.appointments.map(a => `
+                        <tr>
+                            <td class="small">${a.appointment_date} <br/> ${a.appointment_time}</td>
+                            <td class="fw-600 text-info">${a.patient_name}</td>
+                            <td class="fw-600 text-success">${a.doctor_name}</td>
+                            <td><span class="vs-badge badge bg-${a.status === 'confirmed' ? 'success' : 'warning'}">${a.status}</span></td>
+                            <td class="small">${a.reason || '-'}</td>
+                        </tr>
+                    `).join('');
+                }
+            } catch (err) { console.error(err); }
+        }
+
+        async function loadTransactions() {
+            try {
+                const res = await apiFetch('/admin/transactions');
+                if (res.ok) {
+                    const list = document.getElementById('transactions-list');
+                    list.innerHTML = res.data.transactions.map(t => `
+                        <tr>
+                            <td class="small">${new Date(t.transaction_date).toLocaleDateString()}</td>
+                            <td class="text-white">${t.patient_name}</td>
+                            <td><span class="vs-badge bg-${t.transaction_type === 'credit' ? 'success' : 'danger'}">${t.transaction_type}</span></td>
+                            <td class="fw-700">₹${t.amount}</td>
+                            <td class="small">${t.description}</td>
+                        </tr>
+                    `).join('');
+                }
+            } catch (err) { console.error(err); }
+        }
+
+        async function loadMedicalRecords() {
+            try {
+                const res = await apiFetch('/admin/records');
+                if (res.ok) {
+                    const list = document.getElementById('records-list');
+                    list.innerHTML = res.data.records.map(r => `
+                        <tr>
+                            <td class="small">#${r.id} <br/> ${new Date(r.date).toLocaleDateString()}</td>
+                            <td><div class="fw-600 text-info">${r.patient_name}</div><div class="fs-xs text-muted">ID: ${r.patient_id}</div></td>
+                            <td><div class="fw-600 text-success">${r.doctor_name}</div><div class="fs-xs text-muted">${r.specialization}</div></td>
+                            <td>${r.diagnosis}</td>
+                            <td class="small text-muted">${r.prescription || '-'}</td>
+                        </tr>
+                    `).join('');
+                }
+            } catch (err) { console.error(err); }
+        }
+
+        async function deleteUser(id) {
+            if (!confirm('Are you sure you want to remove this user?')) return;
+            try {
+                const res = await apiFetch('/admin/users/' + id, { method: 'DELETE' });
+                if (res.ok) { 
+                    loadDoctors(); loadPatients(); loadStats(); 
+                }
+            } catch (err) { console.error(err); }
+        }
+
+        document.getElementById('add-doctor-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const body = {
+                name: document.getElementById('doc-name').value,
+                email: document.getElementById('doc-email').value,
+                specialization: document.getElementById('doc-spec').value,
+                experience: document.getElementById('doc-exp').value
+            };
+            try {
+                const res = await apiFetch('/admin/doctors/add', { method: 'POST', body: JSON.stringify(body) });
+                if (res.ok) {
+                    bootstrap.Modal.getInstance(document.getElementById('addDoctorModal')).hide();
+                    loadDoctors(); loadStats();
+                    e.target.reset();
+                } else { alert(res.data.message); }
+            } catch (err) { console.error(err); }
+        });
+
+        function showSection(name) {
+            document.getElementById('dashboard-section').classList.toggle('d-none', name !== 'dashboard');
+            document.getElementById('doctors-section').classList.toggle('d-none', name !== 'doctors');
+            document.getElementById('patients-section').classList.toggle('d-none', name !== 'patients');
+            document.getElementById('appointments-section').classList.toggle('d-none', name !== 'appointments');
+            document.getElementById('transactions-section').classList.toggle('d-none', name !== 'transactions');
+            document.getElementById('records-section').classList.toggle('d-none', name !== 'records');
+            
+            document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
+            const target = event ? (event.target.closest('a') || document.querySelector(`[onclick="showSection('${name}')"]`)) : null;
+            if (target) target.classList.add('active');
+
+            if (name === 'doctors') loadDoctors();
+            if (name === 'patients') loadPatients();
+            if (name === 'appointments') loadAppointments();
+            if (name === 'transactions') loadTransactions();
+            if (name === 'records') loadMedicalRecords();
+        }
+
+        loadStats();
+    </script>
+</body>
+</html>

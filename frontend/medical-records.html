@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medical Records – VitalSync</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+    <div class="dashboard-wrapper">
+        <aside class="sidebar" id="sidebar">
+            <!-- filled by JS based on role -->
+            <a href="#" class="sidebar-brand" id="sidebar-home-link">💙 Vital<span>Sync</span></a>
+            <nav class="mt-2" id="sidebar-nav"></nav>
+            <div class="sidebar-footer">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <div class="user-avatar" id="sidebar-avatar">U</div>
+                    <div>
+                        <div class="fw-600 text-white small" id="sidebar-user-name">User</div>
+                    </div>
+                </div>
+                <button class="btn btn-outline-danger btn-sm w-100 mt-1" onclick="logout()">
+                    <i class="fas fa-sign-out-alt me-1"></i> Logout
+                </button>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="page-header">
+                <h2><i class="fas fa-file-medical text-primary me-2"></i>Medical Records</h2>
+                <p id="page-subtitle">View your medical history, diagnoses and treatment notes.</p>
+            </div>
+
+            <!-- Doctor: Add Record Panel -->
+            <div id="add-record-panel" class="d-none mb-4">
+                <div class="vs-card">
+                    <div class="vs-card-header d-flex justify-content-between align-items-center">
+                        <h5><i class="fas fa-plus me-2 text-success"></i>Add Medical Record</h5>
+                        <div class="d-flex align-items-center gap-2">
+                            <label class="form-label mb-0 small text-muted"><i class="fas fa-microphone-alt"></i> Dictation Language</label>
+                            <select id="dictation-lang" class="form-select form-select-sm" style="width: 140px;">
+                                <option value="en-US">English (US)</option>
+                                <option value="en-IN">English (India)</option>
+                                <option value="hi-IN">Hindi (हिंदी)</option>
+                                <option value="gu-IN">Gujarati (ગુજરાતી)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <form id="record-form">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-500 small">Select Patient *</label>
+                                <select id="patient_id" class="vs-form-control" onchange="onPatientChange()" required>
+                                    <option value="">— Select Patient —</option>
+                                </select>
+                                <div id="patient-vitals-summary" class="mt-2 d-none">
+                                    <!-- Dynamic vitals summary -->
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-500 small d-flex align-items-center justify-content-between">
+                                    <span>Diagnosis *</span>
+                                    <button type="button" class="btn btn-sm btn-light text-primary mic-btn" onclick="toggleDictation('diagnosis', this)" title="Click to dictate">
+                                        <i class="fas fa-microphone"></i>
+                                    </button>
+                                </label>
+                                <input type="text" id="diagnosis" class="vs-form-control"
+                                    placeholder="e.g. Hypertension" required>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-500 small d-flex align-items-center justify-content-between">
+                                    <span>Prescription (General)</span>
+                                    <button type="button" class="btn btn-sm btn-light text-primary mic-btn" onclick="toggleDictation('prescription', this)" title="Click to dictate">
+                                        <i class="fas fa-microphone"></i>
+                                    </button>
+                                </label>
+                                <textarea id="prescription" class="vs-form-control" rows="2"
+                                    placeholder="Amlodipine 5mg once daily…"></textarea>
+                            </div>
+                            <div class="col-12 mt-3">
+                                <label class="form-label fw-500 small">💊 Structured Medication Reminders</label>
+                                <div id="medications-list" class="mb-2">
+                                    <!-- Dynamic medication rows -->
+                                    <div class="row g-2 medication-row mb-2">
+                                        <div class="col-md-5">
+                                            <input type="text" class="vs-form-control med-name" placeholder="Medication Name (e.g. Paracetamol)">
+                                        </div>
+                                        <div class="col-md-3">
+                                            <input type="number" class="vs-form-control med-freq" placeholder="Freq (Hrs)" min="1">
+                                        </div>
+                                        <div class="col-md-3">
+                                            <input type="number" class="vs-form-control med-dur" placeholder="Dur (Days)" min="1">
+                                        </div>
+                                        <div class="col-md-1">
+                                            <button type="button" class="btn btn-outline-danger w-100" onclick="removeMedRow(this)">✕</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button type="button" class="btn btn-vs-outline btn-sm" onclick="addMedRow()">
+                                    <i class="fas fa-plus me-1"></i>Add Another Medicine
+                                </button>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-500 small d-flex align-items-center justify-content-between">
+                                    <span>Treatment Notes</span>
+                                    <button type="button" class="btn btn-sm btn-light text-primary mic-btn" onclick="toggleDictation('notes', this)" title="Click to dictate">
+                                        <i class="fas fa-microphone"></i>
+                                    </button>
+                                </label>
+                                <textarea id="notes" class="vs-form-control" rows="2"
+                                    placeholder="Lifestyle advice, follow-up dates…"></textarea>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-vs-primary mt-3 px-4">
+                            <i class="fas fa-save me-2"></i>Add Record
+                            <span id="rec-spinner" class="spinner-border spinner-border-sm ms-2 d-none"></span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Records List -->
+            <div class="vs-card">
+                <div class="vs-card-header">
+                    <h5><i class="fas fa-history me-2 text-primary"></i>Records History</h5>
+                    <button class="btn btn-vs-outline btn-sm" onclick="loadRecords()"><i
+                            class="fas fa-sync me-1"></i>Refresh</button>
+                </div>
+                <div id="records-container">
+                    <div class="spinner-vs">
+                        <div class="spinner-border text-primary"></div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <div id="toast-container"></div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/auth.js"></script>
+    <script>
+        requireAuth(['patient', 'doctor']);
+        populateSidebarUser();
+        const user = getUser();
+        const urlParams = new URLSearchParams(window.location.search);
+        const mode = urlParams.get('mode') || user.role;
+
+        // Build sidebar dynamically
+        const homeLink = document.getElementById('sidebar-home-link');
+        const nav = document.getElementById('sidebar-nav');
+        if (user.role === 'doctor') {
+            homeLink.href = 'doctor-dashboard.html';
+            nav.innerHTML = `
+      <a href="doctor-dashboard.html"   class="nav-link"><i class="fas fa-home"></i> Dashboard</a>
+      <a href="patient-list.html"       class="nav-link"><i class="fas fa-users"></i> My Patients</a>
+      <a href="medical-records.html"    class="nav-link active"><i class="fas fa-file-medical"></i> Medical Records</a>
+      <a href="prescriptions.html"      class="nav-link"><i class="fas fa-pills"></i> Prescriptions</a>`;
+            document.getElementById('page-subtitle').textContent = 'Add diagnoses and view patient medical history.';
+            document.getElementById('add-record-panel').classList.remove('d-none');
+            loadPatientOptions();
+        } else {
+            homeLink.href = 'patient-dashboard.html';
+            nav.innerHTML = `
+      <a href="patient-dashboard.html" class="nav-link"><i class="fas fa-home"></i> Dashboard</a>
+      <a href="add-health-data.html"   class="nav-link"><i class="fas fa-heartbeat"></i> Add Vitals</a>
+      <a href="medical-records.html"   class="nav-link active"><i class="fas fa-file-medical"></i> Medical Records</a>
+      <a href="book-appointment.html"  class="nav-link"><i class="fas fa-calendar-plus"></i> Book Appointment</a>
+      <a href="prescriptions.html"     class="nav-link"><i class="fas fa-pills"></i> Prescriptions</a>`;
+        }
+
+        async function loadPatientOptions() {
+            const res = await apiFetch('/patient/all');
+            if (!res || !res.ok) return;
+            const sel = document.getElementById('patient_id');
+            sel.innerHTML = '<option value="">— Select Patient —</option>' +
+                res.data.patients.map(p => `<option value="${p.patient_id}">${p.name} (ID:${p.patient_id})</option>`).join('');
+
+            // Prefill patient if ID is in URL
+            const urlPid = urlParams.get('patient_id');
+            const urlNotes = urlParams.get('notes');
+            if (urlPid) {
+                sel.value = urlPid;
+                // Auto-load records for this patient
+                loadRecords();
+            }
+            if (urlNotes) {
+                const diagEl = document.getElementById('diagnosis');
+                if (diagEl) diagEl.value = decodeURIComponent(urlNotes);
+            }
+            onPatientChange();
+        }
+
+        async function onPatientChange() {
+            const pid = document.getElementById('patient_id').value;
+            loadRecords();
+            if (!pid) {
+                document.getElementById('patient-vitals-summary').classList.add('d-none');
+                return;
+            }
+            // Fetch vitals for summary
+            const res = await apiFetch(`/vitals/${pid}`);
+            const summaryEl = document.getElementById('patient-vitals-summary');
+            if (res?.ok && res.data.vitals.length > 0) {
+                const v = res.data.vitals[0];
+                const isAbnormal = v.heart_rate < 60 || v.heart_rate > 100 || v.oxygen_level < 95 || v.temperature > 37.5;
+                summaryEl.innerHTML = `
+                    <div class="p-2 rounded ${isAbnormal ? 'bg-danger bg-opacity-10' : 'bg-primary bg-opacity-10'}" style="font-size:0.75rem;">
+                        <span class="fw-700 text-dark">Latest Vitals:</span> 
+                        <span class="ms-2">💓 ${v.heart_rate} bpm</span>
+                        <span class="ms-2">🫁 ${v.oxygen_level}%</span>
+                        <span class="ms-2">🌡️ ${v.temperature}°C</span>
+                        <span class="ms-2 text-muted">(${new Date(v.record_date).toLocaleDateString()})</span>
+                    </div>`;
+                summaryEl.classList.remove('d-none');
+            } else {
+                summaryEl.classList.add('d-none');
+            }
+        }
+
+        function addMedRow() {
+            const container = document.getElementById('medications-list');
+            const div = document.createElement('div');
+            div.className = 'row g-2 medication-row mb-2';
+            div.innerHTML = `
+                <div class="col-md-5">
+                    <input type="text" class="vs-form-control med-name" placeholder="Medication Name">
+                </div>
+                <div class="col-md-3">
+                    <input type="number" class="vs-form-control med-freq" placeholder="Freq (Hrs)" min="1">
+                </div>
+                <div class="col-md-3">
+                    <input type="number" class="vs-form-control med-dur" placeholder="Dur (Days)" min="1">
+                </div>
+                <div class="col-md-1">
+                    <button type="button" class="btn btn-outline-danger w-100" onclick="removeMedRow(this)">✕</button>
+                </div>`;
+            container.appendChild(div);
+        }
+
+        function removeMedRow(btn) {
+            btn.closest('.medication-row').remove();
+        }
+
+        document.getElementById('record-form')?.addEventListener('submit', async e => {
+            e.preventDefault();
+            const meds = [];
+            document.querySelectorAll('.medication-row').forEach(row => {
+                const name = row.querySelector('.med-name').value.trim();
+                const freq = row.querySelector('.med-freq').value;
+                const dur = row.querySelector('.med-dur').value;
+                if (name && freq && dur) {
+                    meds.push({ name, frequency: parseInt(freq), duration: parseInt(dur) });
+                }
+            });
+
+            const body = {
+                patient_id: document.getElementById('patient_id').value,
+                diagnosis: document.getElementById('diagnosis').value.trim(),
+                prescription: document.getElementById('prescription').value.trim(),
+                notes: document.getElementById('notes').value.trim(),
+                medications: meds
+            };
+            if (!body.patient_id || !body.diagnosis) { showToast('Patient and diagnosis are required.', 'warning'); return; }
+            document.getElementById('rec-spinner').classList.remove('d-none');
+            const res = await apiFetch('/records/add', { method: 'POST', body: JSON.stringify(body) });
+            document.getElementById('rec-spinner').classList.add('d-none');
+            if (res?.ok) { 
+                showToast('Medical record added! ✅'); 
+                e.target.reset(); 
+                document.getElementById('medications-list').innerHTML = `
+                    <div class="row g-2 medication-row mb-2">
+                        <div class="col-md-5"><input type="text" class="vs-form-control med-name" placeholder="Medication Name"></div>
+                        <div class="col-md-3"><input type="number" class="vs-form-control med-freq" placeholder="Freq (Hrs)" min="1"></div>
+                        <div class="col-md-3"><input type="number" class="vs-form-control med-dur" placeholder="Dur (Days)" min="1"></div>
+                        <div class="col-md-1"><button type="button" class="btn btn-outline-danger w-100" onclick="removeMedRow(this)">✕</button></div>
+                    </div>`;
+                loadRecords(); 
+            }
+            else showToast(res?.data?.message || 'Failed.', 'error');
+        });
+
+        async function loadRecords() {
+            const container = document.getElementById('records-container');
+            container.innerHTML = '<div class="spinner-vs"><div class="spinner-border text-primary"></div></div>';
+
+            let pid = '0';
+            if (user.role === 'patient') {
+                endpoint = '/records/my/all';
+            } else {
+                // Priority: 1. Dropdown selection, 2. URL parameter
+                const selValue = document.getElementById('patient_id')?.value;
+                pid = selValue || urlParams.get('patient_id') || '0';
+                endpoint = `/records/${pid}`;
+            }
+
+            const res = await apiFetch(endpoint);
+            if (!res || !res.ok) { container.innerHTML = '<p class="text-muted text-center py-4">Could not load records.</p>'; return; }
+            const records = res.data.records;
+            if (records.length === 0) {
+                container.innerHTML = '<div class="empty-state"><i class="fas fa-file-medical"></i><br>No medical records found.</div>'; return;
+            }
+            container.innerHTML = records.map(r => `
+      <div class="vs-card mb-3" style="border-left:4px solid #0d6efd;">
+        <div class="d-flex justify-content-between mb-2">
+          <div>
+            <div class="fw-700">${r.doctor_name}</div>
+            <span class="badge bg-primary bg-opacity-10 text-primary">${r.specialization}</span>
+          </div>
+          <div class="text-end">
+            <small class="text-muted d-block">${new Date(r.date).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })}</small>
+            ${user.role !== 'patient' ? `<span class="badge bg-info text-dark mt-1">Patient: ${r.patient_name || 'N/A'}</span>` : ''}
+          </div>
+        </div>
+        <div class="mb-2"><strong>🩺 Diagnosis:</strong> ${r.diagnosis}</div>
+        ${r.prescription ? `<div class="mb-2 p-2 rounded" style="background:#f0fdf4;"><strong>💊 Prescription:</strong> ${r.prescription}</div>` : ''}
+        ${r.notes ? `<div class="text-muted small"><strong>📝 Notes:</strong> ${r.notes}</div>` : ''}
+      </div>`).join('');
+        }
+        loadRecords();
+
+        // --- Web Speech API (Dictation) Implementation ---
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        let recognition = null;
+        let isRecording = false;
+        let activeTargetId = null;
+        let activeMicBtn = null;
+
+        if (SpeechRecognition) {
+            recognition = new SpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+
+            recognition.onstart = () => {
+                isRecording = true;
+                if (activeMicBtn) {
+                    activeMicBtn.classList.remove('btn-light', 'text-primary');
+                    activeMicBtn.classList.add('btn-danger', 'text-white');
+                    activeMicBtn.innerHTML = '<i class="fas fa-circle px-1" style="animation: pulse-red 1s infinite;"></i> Recording...';
+                }
+                showToast(`🗣️ Dictation started. Speak now!`, 'success');
+            };
+
+            recognition.onresult = (event) => {
+                const targetElement = document.getElementById(activeTargetId);
+                if (!targetElement) return;
+
+                let interimTranscript = '';
+                let finalTranscript = '';
+
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    if (event.results[i].isFinal) {
+                        finalTranscript += event.results[i][0].transcript;
+                    } else {
+                        interimTranscript += event.results[i][0].transcript;
+                    }
+                }
+
+                // If input type is text or textarea, we simply append the recognized text
+                // Since continuous = true, we append the final chunk to existing value 
+                // However, capturing interim results smoothly with existing text is tricky.
+                // A better approach for continuous appending without overriding existing text:
+                
+                // We use a custom attribute to store the "base" text before this session started
+                if (!targetElement.hasAttribute('data-base-text')) {
+                    targetElement.setAttribute('data-base-text', targetElement.value);
+                }
+
+                const baseText = targetElement.getAttribute('data-base-text');
+                const spacer = baseText.length > 0 && !baseText.endsWith(' ') ? ' ' : '';
+                
+                // Combine existing text + new finalized statements + current interim
+                targetElement.value = baseText + spacer + finalTranscript + (interimTranscript ? ' ' + interimTranscript : '');
+
+                // When a statement finalizes, update the base text so we can build upon it
+                if (finalTranscript !== '') {
+                    targetElement.setAttribute('data-base-text', targetElement.value);
+                }
+            };
+
+            recognition.onerror = (event) => {
+                console.error("Speech recognition error:", event.error);
+                let msg = 'Speech recognition error.';
+                if(event.error === 'not-allowed') msg = 'Microphone access denied. Please allow microphone permissions.';
+                if(event.error === 'no-speech') msg = 'No speech detected.';
+                showToast(`❌ ${msg}`, 'error');
+                stopDictation();
+            };
+
+            recognition.onend = () => {
+                // If it ended automatically (e.g. silence), but we want it to keep going, we could restart it here.
+                // For simplicity, we just stop it and let user click again if they want.
+                if (isRecording) {
+                    stopDictation();
+                    showToast('Dictation ended.', 'info');
+                }
+            };
+
+        } else {
+            console.warn("Speech Recognition API is not supported in this browser.");
+            // Hide mic buttons if not supported
+            document.querySelectorAll('.mic-btn').forEach(btn => btn.style.display = 'none');
+        }
+
+        function toggleDictation(targetId, btnElement) {
+            if (!recognition) {
+                showToast("Your browser does not support Voice Dictation. Try Google Chrome.", "error");
+                return;
+            }
+
+            if (isRecording) {
+                // If already recording, check if they clicked the SAME button to stop it
+                if (activeTargetId === targetId) {
+                    stopDictation();
+                } else {
+                    // Clicked a different button while recording. Stop current, start new immediately.
+                    stopDictation();
+                    setTimeout(() => startDictation(targetId, btnElement), 300); // short delay to ensure stop completes
+                }
+            } else {
+                startDictation(targetId, btnElement);
+            }
+        }
+
+        function startDictation(targetId, btnElement) {
+            activeTargetId = targetId;
+            activeMicBtn = btnElement;
+            
+            // Set language
+            const langSelect = document.getElementById('dictation-lang');
+            recognition.lang = langSelect.value;
+
+            // Reset base text tracking for this session
+            const el = document.getElementById(targetId);
+            if (el) el.removeAttribute('data-base-text');
+
+            try {
+                recognition.start();
+            } catch (e) {
+                console.error("Dictation already started", e);
+            }
+        }
+
+        function stopDictation() {
+            if (recognition) {
+                try {
+                    recognition.stop();
+                } catch(e){}
+            }
+            isRecording = false;
+            
+            // Cleanup UI
+            if (activeMicBtn) {
+                activeMicBtn.classList.remove('btn-danger', 'text-white');
+                activeMicBtn.classList.add('btn-light', 'text-primary');
+                activeMicBtn.innerHTML = '<i class="fas fa-microphone"></i>';
+            }
+            
+            activeTargetId = null;
+            activeMicBtn = null;
+        }
+
+        // Add keyframes for the recording pulse effect dynamically
+        const style = document.createElement('style');
+        style.innerHTML = `
+            @keyframes pulse-red {
+                0% { opacity: 1; transform: scale(1); }
+                50% { opacity: 0.5; transform: scale(1.2); }
+                100% { opacity: 1; transform: scale(1); }
+            }
+        `;
+        document.head.appendChild(style);
+
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,71 @@
+VitalSync – Smart Health Data Synchronization System
+Project Status & Progress Reports
+
+These progress reports document the development lifecycle of the VitalSync mini-project, broken down into 4 key phases of implementation.
+
+================================================================================
+PROJECT PROGRESS REPORT 1: Project Inception, Scope, & Architecture Design
+================================================================================
+Project Title: VitalSync – Smart Health Data Synchronization System
+Objective: To build a complete full-stack healthcare management platform that enables patients and doctors to manage and synchronize health data in real-time.
+Current Phase: Planning and Environment Setup
+
+Progress Details:
+1. Requirements Analysis: Defined user roles (Doctor and Patient) and essential features such as vital tracking, appointment booking, and medical record management.
+2. Technology Stack Selection:
+   - Backend: Node.js with Express.js
+   - Database: MySQL for structured data storage
+   - Frontend: HTML5, CSS3, Bootstrap 5 for responsive design, and Chart.js for data visualization
+   - Authentication: JSON Web Tokens (JWT) and bcryptjs for security
+3. Architecture Design: Outlined the RESTful API endpoints and established the overall folder structure (frontend, backend, and database directories).
+4. Environment Setup: Installed required tools including Node.js v18+, MySQL 8+, and set up the initial backend environment with necessary dependencies.
+
+Status: COMPLETED
+
+================================================================================
+PROJECT PROGRESS REPORT 2: Database Design & Data Layer Implementation
+================================================================================
+Project Title: VitalSync – Smart Health Data Synchronization System
+Current Phase: Database Architecture and Backend Integration
+
+Progress Details:
+1. Schema Design: Created robust relational structures to handle distinct entities efficiently. The tables include configurations for Users (Patient/Doctor), Vitals (Heart Rate, BP, Oxygen, Temp), Appointments, and Medical Records.
+2. Database Initialization: Developed the `vitalsync_schema.sql` setup script to auto-generate tables, relationships, and seed the database with sample data (e.g., sample doctors, patients, and historical vitals).
+3. Backend Database Connection: Configured the MySQL connection pool in `config/db.js` using environment variables (.env) for secure and dynamic credentials management.
+4. Security Best Practices: Ensured sensitive credentials and configurations are isolated from the codebase.
+
+Status: COMPLETED
+
+================================================================================
+PROJECT PROGRESS REPORT 3: API Development & Security Implementation
+================================================================================
+Project Title: VitalSync – Smart Health Data Synchronization System
+Current Phase: Backend API and Security Layer
+
+Progress Details:
+1. Authentication System: Implemented user registration and login endpoints (`/api/auth`) with secure password hashing using bcryptjs (12 salt rounds) and JWT payload generation valid for 24 hours.
+2. Role-Based Access Control (RBAC): Developed middleware to guard protected routes, ensuring only doctors can access all patient profiles/records and confirm appointments, while patients can only view their own data and book appointments.
+3. Core API Modules: 
+   - Patient Controller: For profile management.
+   - Vitals Controller: Endpoints to record daily statistics and detect abnormal readings.
+   - Appointments Controller: For booking, listing, and confirming/rejecting appointments.
+   - Records Controller: Facilitating the documentation and retrieval of detailed medical records and prescriptions.
+4. Input Validation: Integrated `express-validator` to ensure all incoming data to APIs is correctly formatted and secured against basic injection attacks.
+
+Status: COMPLETED
+
+================================================================================
+PROJECT PROGRESS REPORT 4: Frontend Development & Full System Integration
+================================================================================
+Project Title: VitalSync – Smart Health Data Synchronization System
+Current Phase: User Interface, Interactivity, and Final Testing
+
+Progress Details:
+1. Interface Development: Built responsive web pages using Bootstrap 5, creating distinct experiences for the two main user types:
+   - Doctor Dashboard: Interfaces to view/manage registered patients, monitor vital statistics with color-coded alerts, manage appointments, and add clinical notes/prescriptions.
+   - Patient Dashboard: Interfaces to log daily vitals, book doctor appointments, and view full medical history.
+2. Data Visualization: Integrated Chart.js to render real-time, historical trend charts of user vitals, giving immediate visual feedback to patients and doctors.
+3. API Integration: Developed `auth.js` helper utility on the frontend to handle JWT tokens and `apiFetch` calls, seamlessly exchanging data between the HTML templates and Express backend.
+4. Final Testing: Conducted end-to-end functionality tests (booking flow, vital submission, auth guards) to ensure a stable, reliable local environment runtime.
+
+Status: COMPLETED

@@ -1,0 +1,1290 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self';
+                 script-src 'self' 'unsafe-inline' 'unsafe-eval' cdn.jsdelivr.net cdnjs.cloudflare.com cdn.socket.io;
+                 style-src  'self' 'unsafe-inline' cdn.jsdelivr.net cdnjs.cloudflare.com fonts.googleapis.com;
+                 font-src   'self' data: fonts.gstatic.com cdnjs.cloudflare.com;
+                 connect-src 'self' http://localhost:5000 ws://localhost:5000 https://cdn.jsdelivr.net https://cdn.socket.io https://cdnjs.cloudflare.com;
+                 img-src 'self' data:;">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patient Dashboard – VitalSync</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+    <style>
+        .welcome-banner {
+            background: linear-gradient(135deg, #0f1535, #1a237e 60%, #0d6efd);
+            border-radius: 14px;
+            padding: 22px 28px;
+            color: #fff;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .welcome-banner h4 {
+            margin: 0;
+            font-weight: 700;
+            font-size: 1.25rem;
+        }
+
+        .welcome-banner p {
+            margin: 4px 0 0;
+            opacity: 0.8;
+            font-size: 0.88rem;
+        }
+
+        .welcome-banner .quick-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        /* SOS Button */
+        .sos-btn {
+            background: #ef4444;
+            border: none;
+            color: #fff;
+            border-radius: 8px;
+            padding: 6px 18px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            cursor: pointer;
+            animation: sos-pulse 2s infinite;
+            letter-spacing: 0.5px;
+        }
+
+        .sos-btn:hover {
+            background: #dc2626;
+            animation: none;
+        }
+
+        @keyframes sos-pulse {
+
+            0%,
+            100% {
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5);
+            }
+
+            50% {
+                box-shadow: 0 0 0 8px rgba(239, 68, 68, 0);
+            }
+        }
+
+        .stat-mini {
+            background: #fff;
+            border-radius: 10px;
+            border: 1px solid #e2e8f0;
+            padding: 14px 18px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, .05);
+        }
+
+        .stat-mini .sm-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+
+        .stat-mini .sm-val {
+            font-size: 1.5rem;
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        .stat-mini .sm-lbl {
+            font-size: 0.76rem;
+            color: #64748b;
+        }
+
+        .vital-status-bar {
+            display: flex;
+            gap: 6px;
+            margin-top: 6px;
+            flex-wrap: wrap;
+        }
+
+        .vital-pill {
+            padding: 3px 10px;
+            border-radius: 50px;
+            font-size: 0.72rem;
+            font-weight: 600;
+        }
+
+        .vital-pill.ok {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .vital-pill.warn {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .vital-pill.danger {
+            background: #fee2e2;
+            color: #7f1d1d;
+        }
+
+        .activity-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 10px 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+
+        .activity-dot {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            flex-shrink: 0;
+        }
+
+        .refresh-btn {
+            background: rgba(255, 255, 255, .15);
+            border: 1px solid rgba(255, 255, 255, .3);
+            color: #fff;
+            border-radius: 8px;
+            padding: 6px 14px;
+            font-size: 0.82rem;
+            cursor: pointer;
+        }
+
+        .refresh-btn:hover {
+            background: rgba(255, 255, 255, .25);
+        }
+
+        .last-updated {
+            font-size: 0.72rem;
+            opacity: 0.65;
+            margin-top: 4px;
+        }
+
+        .appt-upcoming {
+            border-left: 4px solid #0d6efd;
+            padding: 10px 14px;
+            border-radius: 0 8px 8px 0;
+            background: #f8faff;
+            margin-bottom: 8px;
+        }
+
+        .appt-upcoming.confirmed {
+            border-color: #22c55e;
+            background: #f0fdf4;
+        }
+
+        .appt-upcoming.pending {
+            border-color: #f59e0b;
+            background: #fffbeb;
+        }
+
+        .appt-upcoming.rejected {
+            border-color: #ef4444;
+            background: #fef2f2;
+        }
+
+        .appt-upcoming.completed {
+            border-color: #6c63ff;
+            background: #f5f3ff;
+        }
+
+        /* Risk card */
+        .risk-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 16px;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            font-weight: 700;
+        }
+
+        .risk-low {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .risk-medium {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .risk-high {
+            background: #fee2e2;
+            color: #7f1d1d;
+        }
+
+        /* Trend warnings */
+        .trend-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 10px 14px;
+            border-radius: 10px;
+            margin-bottom: 8px;
+            font-size: 0.88rem;
+            font-weight: 500;
+        }
+
+        .trend-item.warning {
+            background: #fffbeb;
+            border: 1px solid #fde68a;
+            color: #92400e;
+        }
+
+        .trend-item.danger {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #7f1d1d;
+        }
+
+        .trend-item.ok {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            color: #065f46;
+        }
+
+        /* Critical alert banner */
+        .critical-alert-banner {
+            background: linear-gradient(135deg, #7f1d1d, #ef4444);
+            color: #fff;
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            animation: pulse-red 1.5s infinite;
+        }
+
+        @keyframes pulse-red {
+
+            0%,
+            100% {
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+            }
+
+            50% {
+                box-shadow: 0 0 0 8px rgba(239, 68, 68, 0);
+            }
+        }
+
+        .critical-alert-banner .alert-icon {
+            font-size: 1.6rem;
+            flex-shrink: 0;
+        }
+
+        /* Medication reminder */
+        .reminder-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            border-radius: 8px;
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            margin-bottom: 8px;
+            font-size: 0.85rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="dashboard-wrapper">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <a href="patient-dashboard.html" class="sidebar-brand">💙 Vital<span>Sync</span></a>
+            <nav class="mt-2">
+                <a href="patient-dashboard.html" class="nav-link active"><i class="fas fa-home"></i> Dashboard</a>
+                <a href="add-health-data.html" class="nav-link"><i class="fas fa-heartbeat"></i> Add Vitals</a>
+                <a href="medical-records.html" class="nav-link"><i class="fas fa-file-medical"></i> Medical Records</a>
+                <a href="book-appointment.html" class="nav-link"><i class="fas fa-calendar-plus"></i> Book
+                    Appointment</a>
+                <a href="prescriptions.html" class="nav-link"><i class="fas fa-pills"></i> Prescriptions</a>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <div class="user-avatar" id="sidebar-avatar">P</div>
+                    <div>
+                        <div class="fw-600 text-white small" id="sidebar-user-name">Patient</div>
+                        <div class="text-muted" style="font-size:0.75rem;">Patient</div>
+                    </div>
+                </div>
+                <button class="btn btn-outline-danger btn-sm w-100 mt-1" onclick="logout()">
+                    <i class="fas fa-sign-out-alt me-1"></i> Logout
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main -->
+        <main class="main-content">
+
+            <!-- Welcome Banner -->
+            <div class="welcome-banner">
+                <div>
+                    <h4 id="welcome-greeting">Good morning 👋</h4>
+                    <p id="welcome-sub">Here's your health summary for today.</p>
+                    <div class="last-updated">Last updated: <span id="last-updated-time">—</span></div>
+                </div>
+                <div class="quick-actions">
+                    <a href="add-health-data.html" class="btn btn-sm"
+                        style="background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.3);">
+                        <i class="fas fa-plus me-1"></i>Log Vitals
+                    </a>
+                    <a href="book-appointment.html" class="btn btn-sm"
+                        style="background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.3);">
+                        <i class="fas fa-calendar-plus me-1"></i>Book Appointment
+                    </a>
+                    <button class="sos-btn" onclick="triggerSOS()" id="sos-button">
+                        🆘 SOS EMERGENCY
+                    </button>
+                    <button class="refresh-btn" onclick="refreshAll()"><i
+                            class="fas fa-sync-alt me-1"></i>Refresh</button>
+                </div>
+            </div>
+
+            <!-- Critical Alert Banner (hidden by default) -->
+            <div id="critical-alert-banner" style="display:none;"></div>
+
+            <!-- Alerts from vitals -->
+            <div id="vitals-alert-container"></div>
+
+            <!-- ── Row 1: 4 KPI Vitals ──────────────────────────── -->
+            <div class="row g-3 mb-4">
+                <div class="col-6 col-md-3">
+                    <div class="kpi-card">
+                        <div class="kpi-icon bg-heart"><i class="fas fa-heartbeat text-danger"></i></div>
+                        <div>
+                            <div class="kpi-val" id="kpi-hr">--</div>
+                            <div class="kpi-label">Heart Rate (bpm)</div>
+                            <div class="vital-status-bar"><span class="vital-pill" id="pill-hr">Normal</span></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="kpi-card">
+                        <div class="kpi-icon bg-bp"><i class="fas fa-tachometer-alt text-primary"></i></div>
+                        <div>
+                            <div class="kpi-val" id="kpi-bp">--</div>
+                            <div class="kpi-label">Blood Pressure</div>
+                            <div class="vital-status-bar"><span class="vital-pill ok" id="pill-bp">Latest</span></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="kpi-card">
+                        <div class="kpi-icon bg-oxy"><i class="fas fa-lungs text-success"></i></div>
+                        <div>
+                            <div class="kpi-val" id="kpi-oxy">--</div>
+                            <div class="kpi-label">Oxygen Level (%)</div>
+                            <div class="vital-status-bar"><span class="vital-pill" id="pill-oxy">Normal</span></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="kpi-card">
+                        <div class="kpi-icon bg-temp"><i class="fas fa-thermometer-half text-warning"></i></div>
+                        <div>
+                            <div class="kpi-val" id="kpi-temp">--</div>
+                            <div class="kpi-label">Temperature (°C)</div>
+                            <div class="vital-status-bar"><span class="vital-pill" id="pill-temp">Normal</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Summary Mini Stats -->
+            <div class="row g-3 mb-4">
+                <div class="col-6 col-lg-3">
+                    <div class="stat-mini">
+                        <div class="sm-icon" style="background:#eff6ff;"><i class="fas fa-list-alt text-primary"></i>
+                        </div>
+                        <div>
+                            <div class="sm-val" id="stat-total-vitals">0</div>
+                            <div class="sm-lbl">Total Vitals Logged</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-lg-3">
+                    <div class="stat-mini">
+                        <div class="sm-icon" style="background:#f0fdf4;"><i
+                                class="fas fa-calendar-check text-success"></i></div>
+                        <div>
+                            <div class="sm-val" id="stat-confirmed">0</div>
+                            <div class="sm-lbl">Confirmed Appointments</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-lg-3">
+                    <div class="stat-mini">
+                        <div class="sm-icon" style="background:#fef3c7;"><i class="fas fa-clock text-warning"></i></div>
+                        <div>
+                            <div class="sm-val" id="stat-pending">0</div>
+                            <div class="sm-lbl">Awaiting Response</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-lg-3">
+                    <div class="stat-mini">
+                        <div class="sm-icon" style="background:#f5f3ff;"><i class="fas fa-file-prescription"
+                                style="color:#6c63ff;"></i></div>
+                        <div>
+                            <div class="sm-val" id="stat-records">0</div>
+                            <div class="sm-lbl">Medical Records</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Patient Wallet & Billing ──────────────────────────── -->
+            <div class="row g-4 mb-4">
+                <div class="col-lg-5">
+                    <div class="vs-card h-100" style="background: linear-gradient(135deg, #1e1b4b, #4338ca); color: white;">
+                        <div class="vs-card-header" style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+                            <h5 style="color: white;"><i class="fas fa-wallet me-2 text-warning"></i>Medical Wallet</h5>
+                        </div>
+                        <div class="text-center py-4">
+                            <div class="text-white-50 small text-uppercase fw-bold mb-1">Available Balance</div>
+                            <h2 class="display-5 fw-bold text-white mb-3" id="wallet-balance">₹0.00</h2>
+                            <button class="btn btn-warning px-4 fw-bold" onclick="addFundsPrompt()">+ Add Funds</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-7">
+                    <div class="vs-card h-100">
+                        <div class="vs-card-header">
+                            <h5><i class="fas fa-file-invoice-dollar me-2 text-primary"></i>Recent Transactions</h5>
+                        </div>
+                        <div class="table-responsive" style="max-height: 200px; overflow-y: auto;">
+                            <table class="vs-table w-100 mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Description</th>
+                                        <th>Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="wallet-tx-body">
+                                    <tr>
+                                        <td colspan="3" class="text-center text-muted py-3">Loading…</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Healthcare Budget Tracker ──────────────────────────── -->
+            <div class="row g-4 mb-4">
+                <div class="col-12">
+                    <div class="vs-card">
+                        <div class="vs-card-header">
+                            <h5><i class="fas fa-chart-bar me-2 text-primary"></i>Healthcare Budget Tracker</h5>
+                            <span class="badge bg-secondary" style="font-size:0.7rem;">6 Month Expense Analysis</span>
+                        </div>
+                        <div style="height:250px;"><canvas id="budget-chart"></canvas></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── AI Risk Prediction + Trend Analyzer ───────────── -->
+            <div class="row g-4 mb-4">
+                <!-- AI Risk Card -->
+                <div class="col-lg-6">
+                    <div class="vs-card h-100">
+                        <div class="vs-card-header">
+                            <h5><i class="fas fa-brain me-2 text-primary"></i>🤖 AI Health Risk Prediction</h5>
+                            <span class="badge bg-primary" style="font-size:0.7rem;">Predictive Analytics</span>
+                        </div>
+                        <div id="risk-content">
+                            <div class="spinner-vs">
+                                <div class="spinner-border text-primary spinner-border-sm"></div>
+                            </div>
+                        </div>
+                        <div style="height:180px;" class="mt-3">
+                            <canvas id="risk-trend-chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Health Trend Analyzer -->
+                <div class="col-lg-6">
+                    <div class="vs-card h-100">
+                        <div class="vs-card-header">
+                            <h5><i class="fas fa-chart-line me-2 text-primary"></i>📈 Health Trend Analyzer</h5>
+                            <span class="badge bg-secondary" style="font-size:0.7rem;">Last 7 Records</span>
+                        </div>
+                        <div id="trend-content">
+                            <div class="spinner-vs">
+                                <div class="spinner-border text-primary spinner-border-sm"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Row 2: Chart + Appointments ──────────────────────── -->
+            <div class="row g-4 mb-4">
+                <div class="col-lg-8">
+                    <div class="vs-card">
+                        <div class="vs-card-header">
+                            <h5><i class="fas fa-chart-area me-2 text-primary"></i>Vitals Trend</h5>
+                            <a href="add-health-data.html" class="btn btn-vs-primary btn-sm">+ Add Vitals</a>
+                        </div>
+                        <div style="height:280px;"><canvas id="vitals-chart"></canvas></div>
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="vs-card h-100">
+                        <div class="vs-card-header">
+                            <h5><i class="fas fa-calendar me-2 text-primary"></i>Upcoming Appointments</h5>
+                            <a href="book-appointment.html" class="btn btn-vs-outline btn-sm">+ Book</a>
+                        </div>
+                        <div id="upcoming-appointments">
+                            <div class="spinner-vs">
+                                <div class="spinner-border text-primary spinner-border-sm"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Row 3: Recent Vitals Table + Medication Reminders ── -->
+            <div class="row g-4 mb-4">
+                <div class="col-lg-8">
+                    <div class="vs-card">
+                        <div class="vs-card-header">
+                            <h5><i class="fas fa-table me-2 text-primary"></i>Recent Vitals History</h5>
+                            <a href="add-health-data.html" class="btn btn-vs-outline btn-sm">Log Today's Vitals</a>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="vs-table w-100">
+                                <thead>
+                                    <tr>
+                                        <th>Date & Time</th>
+                                        <th>Heart Rate</th>
+                                        <th>Blood Pressure</th>
+                                        <th>Oxygen</th>
+                                        <th>Temperature</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="vitals-table-body">
+                                    <tr>
+                                        <td colspan="6" class="text-center text-muted py-3">Loading…</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4">
+                    <div class="vs-card h-100">
+                        <div class="vs-card-header">
+                            <h5><i class="fas fa-pills me-2 text-success"></i>💊 Medication Reminders</h5>
+                        </div>
+                        <div id="reminders-content">
+                            <div class="spinner-vs">
+                                <div class="spinner-border text-primary spinner-border-sm"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Active Ambulance Requests -->
+            <div id="ambulance-status-container" style="display:none;" class="mb-4">
+                <div class="vs-card border-danger shadow-sm">
+                    <div class="vs-card-header bg-danger text-white">
+                        <h5><i class="fas fa-ambulance me-2"></i>Ambulance Status</h5>
+                        <span class="badge bg-white text-danger">LIVE</span>
+                    </div>
+                    <div id="ambulance-requests-list" class="p-3">
+                        <!-- Requests will be loaded here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Activity Feed -->
+            <div class="row g-4 mb-4">
+                <div class="col-12">
+                    <div class="vs-card">
+                        <div class="vs-card-header">
+                            <h5><i class="fas fa-history me-2 text-primary"></i>Recent Activity</h5>
+                        </div>
+                        <div id="activity-feed" class="row g-0">
+                            <div class="spinner-vs">
+                                <div class="spinner-border text-primary spinner-border-sm"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+    <div id="toast-container"></div>
+    <audio id="reminder-sound" src="https://assets.mixkit.io/active_storage/sfx/2869/2869-preview.mp3" preload="auto"></audio>
+
+    <!-- SOS Modal -->
+    <div class="modal fade" id="sos-modal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0" style="border-radius:16px;overflow:hidden;">
+                <div class="modal-header"
+                    style="background:linear-gradient(135deg,#7f1d1d,#ef4444);color:#fff;border:none;">
+                    <h5 class="modal-title">🆘 Emergency SOS</h5>
+                </div>
+                <div class="modal-body text-center py-4">
+                    <div style="font-size:3rem;">🚨</div>
+                    <h5 class="fw-700 mt-2">Are you sure?</h5>
+                    <p class="text-muted">This will immediately alert your assigned doctor and send an emergency notification.</p>
+                    
+                    <div class="mt-4 p-3 border rounded shadow-sm bg-light text-start">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="request-ambulance-check">
+                            <label class="form-check-label fw-600 text-danger" for="request-ambulance-check">
+                                <i class="fas fa-ambulance me-1"></i> Request Emergency Ambulance?
+                            </label>
+                        </div>
+                        <div id="ambulance-details" style="display:none;" class="mt-2">
+                            <input type="text" id="ambulance-address" class="form-control form-control-sm" placeholder="Enter pickup address (optional)">
+                        </div>
+                    </div>
+                </div>
+                <script>
+                    document.getElementById('request-ambulance-check').addEventListener('change', function() {
+                        document.getElementById('ambulance-details').style.display = this.checked ? 'block' : 'none';
+                    });
+                </script>
+                <div class="modal-footer border-0 justify-content-center gap-3 pb-4">
+                    <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button class="btn btn-danger fw-700 px-4" id="sos-confirm-btn" onclick="confirmSOS()">🆘 Send Emergency Alert</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/charts.js"></script>
+    <script>
+        requireAuth(['patient']);
+        populateSidebarUser();
+        const user = getUser();
+        let sosModal;
+
+        // ── Socket.io connection ───────────────────────────────────
+        const socket = io('http://localhost:5000', { transports: ['websocket', 'polling'] });
+        socket.on('connect', () => {
+            socket.emit('join_room', user.id);
+        });
+
+        // Receive medication reminder via socket
+        socket.on('medication_reminder', (data) => {
+            console.log('💊 Medication reminder received:', data);
+            
+            // 1. Play sound
+            const sound = document.getElementById('reminder-sound');
+            if (sound) sound.play().catch(e => console.warn('Sound play blocked:', e));
+
+            // 2. Show toast
+            showToast(`💊 ${data.message}`, 'info');
+
+            // 3. Show persistent banner
+            showMedicationBanner(data.message, data.doctor_name, data.reminder_id);
+
+            // 4. Refresh UI
+            loadReminders();
+            loadActivityFeed();
+            // Update notification badge if exists
+            loadNotificationsPanel(); 
+        });
+
+        // Receive appointment status update via socket
+        socket.on('appointment_status_update', (data) => {
+            console.log('📅 Appointment status update:', data);
+            showToast(`📅 ${data.message}`, data.status === 'confirmed' ? 'success' : 'warning');
+            loadAppointments(); // Refresh the list
+            if (data.status === 'confirmed') {
+                showCriticalBanner(`✅ Your appointment with Dr. ${data.doctor_name} has been CONFIRMED.`);
+            }
+        });
+
+        // Receive new medical record notification via socket
+        socket.on('record_added', (data) => {
+            console.log('📄 Medical record added:', data);
+            showToast(`📄 ${data.message}`, 'success');
+            // Show persistent banner
+            showMedicationBanner(`New prescription available from Dr. ${data.doctor_name}`, data.doctor_name);
+            loadAppointments(); // Refresh lists
+            loadActivityFeed();
+        });
+
+        // ── Welcome greeting ──────────────────────────────────────
+        (function () {
+            const h = new Date().getHours();
+            const g = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+            document.getElementById('welcome-greeting').textContent = `${g}, ${user.name.split(' ')[0]} 👋`;
+            document.getElementById('welcome-sub').textContent =
+                `Today is ${new Date().toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}`;
+        })();
+
+        function setLastUpdated() {
+            document.getElementById('last-updated-time').textContent = new Date().toLocaleTimeString('en-IN');
+        }
+
+        // Stub – patients don't have a notification panel like doctors.
+        // Socket events call this after sending reminders/SOS responses,
+        // so we refresh the relevant patient sections instead.
+        function loadNotificationsPanel() {
+            loadReminders();
+            loadActivityFeed();
+        }
+
+        // ── SOS Handler ───────────────────────────────────────────
+        function triggerSOS() {
+            sosModal = new bootstrap.Modal(document.getElementById('sos-modal'));
+            sosModal.show();
+        }
+
+        async function confirmSOS() {
+            const btn = document.getElementById('sos-confirm-btn');
+            const reqAmb = document.getElementById('request-ambulance-check').checked;
+            const address = document.getElementById('ambulance-address').value;
+
+            btn.disabled = true;
+            btn.textContent = 'Sending...';
+            
+            // 1. Send SOS notification
+            const res = await apiFetch('/notifications/sos', { method: 'POST', body: JSON.stringify({ message: reqAmb ? 'SOS with Ambulance Request' : 'SOS' }) });
+            
+            if (res?.ok) {
+                // 2. If ambulance requested, send separate request
+                if (reqAmb) {
+                    const ambRes = await apiFetch('/ambulance/request', {
+                        method: 'POST',
+                        body: JSON.stringify({ pickup_address: address || 'Current Location' })
+                    });
+                    if (ambRes?.ok) {
+                        showToast('🚑 Ambulance requested!', 'success');
+                        loadAmbulanceRequests();
+                    }
+                }
+
+                sosModal.hide();
+                showToast('🆘 Emergency alert sent to your doctor!', 'error');
+                showCriticalBanner(`🆘 SOS Emergency alert sent! Your doctor has been notified immediately.`);
+            } else {
+                showToast('Failed to send SOS. Try again.', 'error');
+            }
+            btn.disabled = false;
+            btn.innerHTML = '🆘 Send Emergency Alert';
+        }
+
+        async function loadAmbulanceRequests() {
+            const container = document.getElementById('ambulance-status-container');
+            const list = document.getElementById('ambulance-requests-list');
+            try {
+                const res = await apiFetch('/ambulance/my');
+                if (res?.ok && res.data.requests.length > 0) {
+                    const active = res.data.requests.filter(r => r.status !== 'completed' && r.status !== 'cancelled');
+                    if (active.length > 0) {
+                        container.style.display = 'block';
+                        list.innerHTML = active.map(r => `
+                            <div class="d-flex align-items-center gap-3 p-3 bg-light rounded mb-2 border-start border-4 border-${r.status === 'dispatched' ? 'success' : 'warning'}">
+                                <div class="fs-2">🚑</div>
+                                <div class="flex-grow-1">
+                                    <div class="fw-bold">Status: <span class="text-uppercase">${r.status}</span></div>
+                                    <div class="small text-muted">To: ${r.pickup_address}</div>
+                                    ${r.driver_name ? `
+                                        <div class="small mt-1">
+                                            <strong>Driver:</strong> ${r.driver_name} (${r.vehicle_number})<br>
+                                            <strong>Phone:</strong> <a href="tel:${r.driver_phone}">${r.driver_phone}</a>
+                                        </div>
+                                    ` : '<div class="small text-muted">Awaiting driver assignment...</div>'}
+                                </div>
+                                <div class="text-end">
+                                    <div class="badge bg-${r.status === 'dispatched' ? 'success' : 'secondary'} opacity-75 mb-1">${r.status}</div>
+                                    <div class="small text-muted">${new Date(r.request_time).toLocaleTimeString()}</div>
+                                </div>
+                            </div>
+                        `).join('');
+                    } else {
+                        container.style.display = 'none';
+                    }
+                } else {
+                    container.style.display = 'none';
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        socket.on('ambulance_dispatched', (data) => {
+            showToast(`🚑 ${data.message}`, 'success');
+            loadAmbulanceRequests();
+            loadActivityFeed();
+        });
+
+        function showCriticalBanner(msg) {
+            const banner = document.getElementById('critical-alert-banner');
+            banner.innerHTML = `
+                <div class="critical-alert-banner">
+                    <div class="alert-icon">🚨</div>
+                    <div>
+                        <div class="fw-700" style="font-size:1rem;">${msg}</div>
+                        <div style="font-size:0.8rem;opacity:0.85;margin-top:4px;">
+                            ${new Date().toLocaleString('en-IN')}
+                        </div>
+                    </div>
+                    <button class="btn btn-sm ms-auto" style="background:rgba(255,255,255,0.2);color:#fff;border:1px solid rgba(255,255,255,0.3);"
+                        onclick="this.closest('.critical-alert-banner').remove()">✕</button>
+                </div>`;
+            banner.style.display = '';
+        }
+
+        function showMedicationBanner(msg, doctor, reminderId) {
+            const container = document.getElementById('critical-alert-banner');
+            const div = document.createElement('div');
+            div.className = 'critical-alert-banner';
+            div.style.background = 'linear-gradient(135deg, #059669, #10b981)';
+            div.innerHTML = `
+                <div class="alert-icon">💊</div>
+                <div class="flex-grow-1">
+                    <div class="fw-700" style="font-size:1rem;">Medication Reminder</div>
+                    <div style="font-size:0.85rem;opacity:0.9;margin-top:2px;">${msg}</div>
+                    <div style="font-size:0.75rem;opacity:0.7;margin-top:4px;">Prescribed by Dr. ${doctor} • ${new Date().toLocaleTimeString()}</div>
+                </div>
+                <div class="d-flex flex-column gap-1">
+                    ${reminderId ? `<button class="btn btn-sm btn-light fw-bold text-success" onclick="takeMedicine(${reminderId}, this)">Mark Taken</button>` : ''}
+                    <button class="btn btn-sm" style="background:rgba(255,255,255,0.2);color:#fff;border:1px solid rgba(255,255,255,0.3);"
+                        onclick="this.closest('.critical-alert-banner').remove()">✕</button>
+                </div>`;
+            container.appendChild(div);
+            container.style.display = '';
+        }
+
+        async function takeMedicine(reminderId, btn) {
+            if (btn) btn.disabled = true;
+            const res = await apiFetch(`/reminders/take/${reminderId}`, { method: 'POST' });
+            if (res?.ok) {
+                showToast('✅ Medication marked as taken!', 'success');
+                if (btn) {
+                    const banner = btn.closest('.critical-alert-banner');
+                    if (banner) banner.remove();
+                }
+                loadReminders();
+                loadActivityFeed();
+            } else {
+                showToast('Failed to update status.', 'error');
+                if (btn) btn.disabled = false;
+            }
+        }
+
+        // ── Vitals ───────────────────────────────────────────────────
+        let vitalsData = [];
+        async function loadVitals() {
+            const res = await apiFetch('/vitals/my/all');
+            if (!res || !res.ok) return;
+            vitalsData = res.data.vitals;
+            document.getElementById('stat-total-vitals').textContent = vitalsData.length;
+
+            const latest = vitalsData[0];
+            if (latest) {
+                document.getElementById('kpi-hr').textContent = latest.heart_rate;
+                document.getElementById('kpi-bp').textContent = latest.blood_pressure || '--';
+                document.getElementById('kpi-oxy').textContent = latest.oxygen_level + '%';
+                document.getElementById('kpi-temp').textContent = latest.temperature + '°C';
+
+                // Critical thresholds (matching backend)
+                setPill('pill-hr', latest.heart_rate < 50 || latest.heart_rate > 120, latest.heart_rate < 60 || latest.heart_rate > 100);
+                setPill('pill-oxy', latest.oxygen_level < 90, latest.oxygen_level < 95);
+                setPill('pill-temp', latest.temperature > 39, latest.temperature > 37.2 || latest.temperature < 36.1);
+
+                // Alerts
+                const alerts = [];
+                if (latest.heart_rate < 50 || latest.heart_rate > 120)
+                    alerts.push(`🚨 CRITICAL: Heart rate ${latest.heart_rate} bpm is in the danger zone!`);
+                else if (latest.heart_rate < 60 || latest.heart_rate > 100)
+                    alerts.push(`⚠️ Heart rate ${latest.heart_rate} bpm is outside normal range (60–100).`);
+                if (latest.oxygen_level < 90)
+                    alerts.push(`🚨 CRITICAL: Oxygen level ${latest.oxygen_level}% is critically low!`);
+                else if (latest.oxygen_level < 95)
+                    alerts.push(`⚠️ Oxygen ${latest.oxygen_level}% is below normal (≥95%).`);
+                if (latest.temperature > 39)
+                    alerts.push(`🚨 CRITICAL: Temperature ${latest.temperature}°C is dangerously high!`);
+                else if (latest.temperature > 37.2)
+                    alerts.push(`⚠️ Temperature ${latest.temperature}°C is elevated (normal ≤37.2°C).`);
+
+                const ac = document.getElementById('vitals-alert-container');
+                ac.innerHTML = alerts.length > 0
+                    ? `<div class="vitals-alert mb-3"><i class="fas fa-exclamation-triangle me-2"></i><div>${alerts.join('<br>')}</div></div>`
+                    : '';
+            }
+
+            // Chart
+            renderVitalsChart('vitals-chart', vitalsData);
+
+            // Table
+            const tbody = document.getElementById('vitals-table-body');
+            if (vitalsData.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">No vitals recorded yet. <a href="add-health-data.html">Add your first record.</a></td></tr>';
+                return;
+            }
+            tbody.innerHTML = vitalsData.slice(0, 10).map(v => {
+                const critical = v.heart_rate < 50 || v.heart_rate > 120 || v.oxygen_level < 90 || v.temperature > 39;
+                const abnormal = !critical && (v.heart_rate < 60 || v.heart_rate > 100 || v.oxygen_level < 95 || v.temperature > 37.2);
+                return `<tr>
+        <td><small>${new Date(v.record_date).toLocaleString('en-IN')}</small></td>
+        <td class="${v.heart_rate < 50 || v.heart_rate > 120 ? 'text-danger fw-600' : (v.heart_rate < 60 || v.heart_rate > 100 ? 'text-warning fw-600' : '')}">${v.heart_rate} bpm</td>
+        <td>${v.blood_pressure || '--'}</td>
+        <td class="${v.oxygen_level < 90 ? 'text-danger fw-600' : v.oxygen_level < 95 ? 'text-warning fw-600' : 'text-success'}">${v.oxygen_level}%</td>
+        <td class="${v.temperature > 39 ? 'text-danger fw-600' : v.temperature > 37.2 ? 'text-warning fw-600' : ''}">${v.temperature}°C</td>
+        <td><span class="badge ${critical ? 'bg-danger' : abnormal ? 'badge-pending' : 'badge-confirmed'}">${critical ? '🚨 Critical' : abnormal ? 'Abnormal' : 'Normal'}</span></td>
+      </tr>`;
+            }).join('');
+        }
+
+        function setPill(id, isCritical, isAbnormal) {
+            const el = document.getElementById(id);
+            if (isCritical) { el.textContent = 'Critical'; el.className = 'vital-pill danger'; }
+            else if (isAbnormal) { el.textContent = 'Abnormal'; el.className = 'vital-pill warn'; }
+            else { el.textContent = 'Normal'; el.className = 'vital-pill ok'; }
+        }
+
+        // ── Appointments ─────────────────────────────────────────────
+        let apptData = [];
+        async function loadAppointments() {
+            const res = await apiFetch('/appointments/list');
+            if (!res || !res.ok) return;
+            apptData = res.data.appointments;
+            const confirmed = apptData.filter(a => a.status === 'confirmed').length;
+            const pending = apptData.filter(a => a.status === 'pending').length;
+            document.getElementById('stat-confirmed').textContent = confirmed;
+            document.getElementById('stat-pending').textContent = pending;
+
+            const now = new Date();
+            const upcoming = apptData.filter(a => new Date(a.appointment_date) >= now).slice(0, 5);
+            const upcomingEl = document.getElementById('upcoming-appointments');
+            if (upcoming.length === 0) {
+                upcomingEl.innerHTML = `<div class="empty-state py-3"><i class="fas fa-calendar-times" style="font-size:2.5rem;opacity:.3;"></i><p class="mt-2 mb-1 small fw-600">No upcoming appointments</p><a href="book-appointment.html" class="btn btn-vs-primary btn-sm mt-1">Book One Now</a></div>`;
+            } else {
+                upcomingEl.innerHTML = upcoming.map(a => `
+            <div class="appt-upcoming ${a.status}">
+          <div class="d-flex justify-content-between align-items-start">
+            <div class="fw-600 small">Dr. ${a.doctor_name}</div>
+            <span class="badge badge-${a.status === 'confirmed' ? 'confirmed' : a.status === 'rejected' ? 'rejected' : 'pending'}">${a.status === 'pending' ? 'awaiting' : a.status}</span>
+          </div>
+          <div class="text-muted" style="font-size:0.78rem;">${a.specialization}</div>
+          <div class="text-muted" style="font-size:0.78rem;"><i class="fas fa-clock me-1"></i>${new Date(a.appointment_date).toLocaleString('en-IN', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>
+          ${a.status === 'confirmed' ? `
+            <div id="tele-join-${a.appointment_id}" class="mt-2" style="display:none;">
+              <button class="btn btn-xs btn-success w-100 fw-bold" onclick="joinTelemedicine(${a.appointment_id})">
+                <i class="fas fa-video me-1"></i> Join Video Call
+              </button>
+            </div>
+          ` : ''}
+        </div>`).join('');
+                // Check for active sessions for these appointments
+                upcoming.forEach(async (a) => {
+                    if (a.status === 'confirmed') checkTeleSession(a.appointment_id);
+                });
+            }
+        }
+
+        // ── Medical Records Count ─────────────────────────────────────
+        async function loadRecordsCount() {
+            const res = await apiFetch('/records/my/all');
+            if (!res || !res.ok) return;
+            document.getElementById('stat-records').textContent = res.data.records.length;
+        }
+
+        // ── AI Risk Prediction ────────────────────────────────────────
+        let riskChart = null;
+        async function loadRiskPrediction() {
+            const res = await apiFetch('/risk/my');
+            if (!res || !res.ok) {
+                document.getElementById('risk-content').innerHTML = '<p class="text-muted small p-2">Could not load risk data.</p>';
+                return;
+            }
+            const { score, level, color, breakdown, trend } = res.data;
+            const levelClass = level === 'High' ? 'risk-high' : level === 'Medium' ? 'risk-medium' : 'risk-low';
+            const levelIcon = level === 'High' ? '🔴' : level === 'Medium' ? '🟡' : '🟢';
+
+            document.getElementById('risk-content').innerHTML = `
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    <div style="text-align:center;">
+                        <div style="font-size:2.5rem;font-weight:800;color:${color};">${score}</div>
+                        <div style="font-size:0.72rem;color:#64748b;">Risk Score</div>
+                    </div>
+                    <div>
+                        <div class="risk-badge ${levelClass}">${levelIcon} Health Risk Level: ${level.toUpperCase()}</div>
+                        <div class="text-muted small mt-2">Max score: 9 | Based on latest vitals</div>
+                    </div>
+                </div>
+                ${breakdown.length > 0 ? `
+                <div style="font-size:0.8rem;color:#64748b;font-weight:600;margin-bottom:6px;">Risk Factors:</div>
+                ${breakdown.map(b => `<div class="d-flex justify-content-between small mb-1"><span>⚠ ${b.factor}: ${b.value}</span><span class="text-danger fw-600">+${b.points}</span></div>`).join('')}
+                ` : '<div class="text-muted small">No risk factors detected in latest vitals.</div>'}`;
+
+            // Risk trend chart
+            if (trend && trend.length > 1) {
+                if (riskChart) riskChart.destroy();
+                const ctx = document.getElementById('risk-trend-chart').getContext('2d');
+                riskChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: trend.map(t => new Date(t.date).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })),
+                        datasets: [{
+                            label: 'Risk Score',
+                            data: trend.map(t => t.score),
+                            borderColor: '#ef4444',
+                            backgroundColor: 'rgba(239,68,68,0.1)',
+                            fill: true,
+                            tension: 0.4,
+                            pointBackgroundColor: trend.map(t => t.level === 'High' ? '#ef4444' : t.level === 'Medium' ? '#f59e0b' : '#22c55e'),
+                            pointRadius: 5,
+                        }]
+                    },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: { min: 0, max: 9, grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { color: '#64748b', font: { size: 10 } } },
+                            x: { grid: { display: false }, ticks: { color: '#64748b', font: { size: 10 } } }
+                        }
+                    }
+                });
+            } else {
+                document.getElementById('risk-trend-chart').parentElement.innerHTML = '<p class="text-muted small text-center py-2">Log more vitals to see risk trend.</p>';
+            }
+        }
+
+        // ── Health Trend Analyzer ─────────────────────────────────────
+        async function loadTrendAnalysis() {
+            const res = await apiFetch('/trends/my');
+            if (!res || !res.ok) {
+                document.getElementById('trend-content').innerHTML = '<p class="text-muted small p-2">Could not load trend data.</p>';
+                return;
+            }
+            const { warnings, vitals } = res.data;
+
+            let html = '';
+            if (warnings.length === 0 || (warnings.length === 1 && warnings[0].type === 'ok')) {
+                html = `<div class="trend-item ok">✅ Vitals appear stable over the last 7 readings. Keep it up!</div>`;
+            } else {
+                html = warnings.map(w => `<div class="trend-item ${w.level}">${w.message}</div>`).join('');
+            }
+
+            // Mini trend chart
+            if (vitals && vitals.length > 1) {
+                html += `<div style="height:120px;margin-top:12px;"><canvas id="trend-mini-chart"></canvas></div>`;
+            }
+            document.getElementById('trend-content').innerHTML = html;
+
+            if (vitals && vitals.length > 1) {
+                const ctx = document.getElementById('trend-mini-chart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: vitals.map(v => new Date(v.record_date).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })),
+                        datasets: [
+                            { label: 'Heart Rate', data: vitals.map(v => v.heart_rate), borderColor: '#ef4444', tension: 0.4, pointRadius: 3 },
+                            { label: 'O₂%', data: vitals.map(v => v.oxygen_level), borderColor: '#22c55e', tension: 0.4, pointRadius: 3 },
+                        ]
+                    },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        plugins: { legend: { display: true, labels: { boxWidth: 10, font: { size: 10 } } } },
+                        scales: { x: { ticks: { font: { size: 9 } } }, y: { ticks: { font: { size: 9 } } } }
+                    }
+                });
+            }
+        }
+
+        // ── Medication Reminders ──────────────────────────────────────
+        async function loadReminders() {
+            const res = await apiFetch('/reminders/active');
+            const el = document.getElementById('reminders-content');
+            if (!res || !res.ok || res.data.schedules.length === 0) {
+                el.innerHTML = `<div class="text-muted small text-center py-4"><i class="fas fa-pills" style="font-size:2rem;opacity:0.3;"></i><p class="mt-2">No active medications. Reminders appear after doctor adds prescriptions.</p></div>`;
+                return;
+            }
+            el.innerHTML = res.data.schedules.map(s => `
+                <div class="reminder-item" style="border-left:4px solid #22c55e;">
+                    <div style="font-size:1.4rem;">💊</div>
+                    <div class="flex-grow-1">
+                        <div class="fw-700">${s.medicine_name}</div>
+                        <div class="text-muted small">Every ${s.frequency_hours} hours • for ${s.duration_days} days</div>
+                        <div class="text-muted small mt-1">
+                            <i class="fas fa-user-md me-1"></i>Dr. ${s.doctor_name}
+                        </div>
+                    </div>
+                    <div class="text-end">
+                        <div class="badge bg-success bg-opacity-10 text-success" style="font-size:0.65rem;">ACTIVE</div>
+                        ${s.last_reminder_sent ? `<div class="text-muted" style="font-size:0.6rem;margin-top:4px;">Last: ${new Date(s.last_reminder_sent).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</div>` : ''}
+                    </div>
+                </div>`).join('');
+        }
+
+        // ── Activity Feed ─────────────────────────────────────────────
+        async function loadActivityFeed() {
+            const [vitalsRes, apptRes, recsRes] = await Promise.all([
+                apiFetch('/vitals/my/all'), apiFetch('/appointments/list'), apiFetch('/records/my/all'),
+            ]);
+            const activities = [];
+            if (vitalsRes?.ok) {
+                vitalsRes.data.vitals.slice(0, 3).forEach(v => activities.push({
+                    type: 'vitals', icon: '💓', color: '#fef2f2',
+                    title: `Vitals logged — HR ${v.heart_rate} bpm`, date: new Date(v.record_date),
+                }));
+            }
+            if (apptRes?.ok) {
+                apptRes.data.appointments.slice(0, 3).forEach(a => activities.push({
+                    type: 'appointment', icon: '📅', color: '#eff6ff',
+                    title: `${a.status.charAt(0).toUpperCase() + a.status.slice(1)} appt with ${a.doctor_name}`,
+                    date: new Date(a.appointment_date),
+                }));
+            }
+            if (recsRes?.ok) {
+                recsRes.data.records.slice(0, 2).forEach(r => activities.push({
+                    type: 'record', icon: '📋', color: '#f0fdf4',
+                    title: `Medical record: ${r.diagnosis}`, date: new Date(r.date),
+                }));
+            }
+            activities.sort((a, b) => b.date - a.date);
+            const container = document.getElementById('activity-feed');
+            container.innerHTML = `<div class="col-12">` + (activities.slice(0, 8).map(a => `
+              <div class="activity-item">
+                <div class="activity-dot" style="background:${a.color};">${a.icon}</div>
+                <div>
+                  <div class="small fw-600">${a.title}</div>
+                  <div class="text-muted" style="font-size:0.73rem;">${a.date.toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
+                </div>
+              </div>`).join('') || '<p class="text-muted small p-2">No activity yet.</p>') + '</div>';
+        }
+
+        // ── Wallet Management ─────────────────────────────────────
+        async function loadWallet() {
+            const txBody = document.getElementById('wallet-tx-body');
+            const balLabel = document.getElementById('wallet-balance');
+            try {
+                const res = await apiFetch('/wallet/my');
+                if (res && res.ok) {
+                    balLabel.textContent = `₹${parseFloat(res.data.wallet.balance).toFixed(2)}`;
+                    
+                    const txs = res.data.transactions;
+                    if (txs && txs.length > 0) {
+                        txBody.innerHTML = txs.map(tx => {
+                            const isCredit = tx.transaction_type === 'credit';
+                            return `
+                                <tr>
+                                    <td class="small">${new Date(tx.transaction_date).toLocaleDateString()}</td>
+                                    <td class="small">${tx.description}</td>
+                                    <td class="fw-bold ${isCredit ? 'text-success' : 'text-danger'}">
+                                        ${isCredit ? '+' : '-'}₹${parseFloat(tx.amount).toFixed(2)}
+                                    </td>
+                                </tr>
+                            `;
+                        }).join('');
+                    } else {
+                        txBody.innerHTML = '<tr><td colspan="3" class="text-center text-muted py-3">No recent transactions.</td></tr>';
+                    }
+
+                    // Render Budget Chart
+                    renderBudgetChart('budget-chart', txs, res.data.bills, res.data.wallet.balance);
+                }
+            } catch (error) {
+                console.error('Error loading wallet:', error);
+            }
+        }
+
+        async function addFundsPrompt() {
+            const amount = prompt("Enter amount to add to your wallet (mock transaction):");
+            if (!amount) return;
+            const parsed = parseFloat(amount);
+            if (isNaN(parsed) || parsed <= 0) {
+                alert("Please enter a valid amount.");
+                return;
+            }
+            
+            const res = await apiFetch('/wallet/add', {
+                method: 'POST',
+                body: JSON.stringify({ amount: parsed })
+            });
+
+            if (res && res.ok) {
+                showToast(`Successfully added ₹${parsed.toFixed(2)} to wallet!`, 'success');
+                loadWallet();
+            } else {
+                showToast('Failed to add funds.', 'error');
+            }
+        }
+
+        async function refreshAll() {
+            await Promise.all([
+                loadVitals(), loadAppointments(), loadRecordsCount(),
+                loadRiskPrediction(), loadTrendAnalysis(), loadReminders(), loadActivityFeed(), loadWallet(), loadAmbulanceRequests()
+            ]);
+            setLastUpdated();
+        }
+
+        // ── Telemedicine ──────────────────────────────────────────
+        socket.on('telemedicine_session_started', (data) => {
+            showToast(`📹 ${data.message}`, 'info');
+            showCriticalBanner(`📹 Dr. ${data.doctor_name} is waiting for you in a video call. <button class="btn btn-xs btn-light ms-2 fw-bold" onclick="window.open('${data.meeting_link}', '_blank')">JOIN NOW</button>`);
+            const btnDiv = document.getElementById(`tele-join-${data.appointment_id}`);
+            if (btnDiv) btnDiv.style.display = 'block';
+        });
+
+        async function checkTeleSession(appointmentId) {
+            try {
+                const res = await apiFetch(`/telemedicine/session/${appointmentId}`);
+                if (res?.ok && res.data.session) {
+                    const btnDiv = document.getElementById(`tele-join-${appointmentId}`);
+                    if (btnDiv) {
+                        btnDiv.style.display = 'block';
+                        btnDiv.querySelector('button').onclick = () => window.open(res.data.session.meeting_link, '_blank');
+                    }
+                }
+            } catch (err) {}
+        }
+
+        async function joinTelemedicine(appointmentId) {
+            checkTeleSession(appointmentId);
+        }
+
+        // Initial load
+        refreshAll();
+        setInterval(refreshAll, 90000);
+    </script>
+</body>
+
+</html>

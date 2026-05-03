@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VitalSync – Smart Health Data Synchronization System</title>
+  <meta name="description" content="VitalSync helps patients and doctors manage and synchronize health data in real time. Centralized medical records, vitals monitoring, and appointment management.">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <!-- ── Navbar ─────────────────────────────────────────── -->
+  <nav class="navbar navbar-expand-lg vs-navbar sticky-top">
+    <div class="container">
+      <a class="navbar-brand" href="index.html">💙 Vital<span>Sync</span></a>
+      <button class="navbar-toggler border-0 text-white" type="button" data-bs-toggle="collapse" data-bs-target="#navMain">
+        <i class="fas fa-bars"></i>
+      </button>
+      <div class="collapse navbar-collapse" id="navMain">
+        <ul class="navbar-nav ms-auto align-items-center gap-3">
+          <li class="nav-item"><a class="nav-link active" href="index.html">Home</a></li>
+          <li class="nav-item"><a class="nav-link" href="#features">Features</a></li>
+          <li class="nav-item"><a class="nav-link" href="#how-it-works">How It Works</a></li>
+          <li class="nav-item"><a class="nav-link" href="#faq">FAQ</a></li>
+          <li class="nav-item ms-lg-2"><a class="nav-link text-white fw-600" href="login.html">Login</a></li>
+          <li class="nav-item"><a class="btn btn-vs-primary px-4" href="register.html">Get Started</a></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ── Hero ──────────────────────────────────────────── -->
+  <section class="hero">
+    <div class="container">
+      <div class="row align-items-center min-vh-75">
+        <div class="col-lg-6 reveal">
+          <span class="badge-pill">🏥 The Future of Healthcare</span>
+          <h1>Your Health Data,<br><span style="color:var(--primary)">Perfectly In Sync.</span></h1>
+          <p class="mt-4 mb-5 pe-lg-5">VitalSync bridges the gap between patient vitals and professional care. Real-time monitoring, AI-driven insights, and seamless communication for a healthier tomorrow.</p>
+          <div class="d-flex gap-3 flex-wrap">
+            <a href="register.html" class="btn btn-vs-primary px-5 py-3 fs-6">🚀 Start Your Journey</a>
+            <a href="#how-it-works" class="btn btn-outline-light border-0 px-4 py-3"><i class="fas fa-play-circle me-2"></i> Watch How it Works</a>
+          </div>
+        </div>
+        <div class="col-lg-6 mt-5 mt-lg-0 reveal" style="transition-delay: 0.2s;">
+          <div class="hero-mockup-wrap">
+            <img src="assets/hero_dashboard.png" alt="VitalSync Dashboard Mockup">
+            <div class="glass-badge pos-tl">
+                <div class="icon bg-heart"><i class="fas fa-heartbeat"></i></div>
+                <div><div class="small opacity-75">Heart Rate</div><div class="fw-700">72 BPM</div></div>
+            </div>
+            <div class="glass-badge pos-br">
+                <div class="icon bg-success"><i class="fas fa-check-circle"></i></div>
+                <div><div class="small opacity-75">Status</div><div class="fw-700">All Vitals Normal</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Trusted By ────────────────────────────────────── -->
+  <section class="py-5 bg-white border-bottom">
+    <div class="container">
+      <div class="row align-items-center opacity-50 gray-scale text-center g-4">
+          <div class="col-6 col-md-2 fw-800 text-muted">CLINIC+</div>
+          <div class="col-6 col-md-2 fw-800 text-muted">MEDICARE</div>
+          <div class="col-6 col-md-2 fw-800 text-muted">HEALTHHUB</div>
+          <div class="col-6 col-md-2 fw-800 text-muted">VITALCARE</div>
+          <div class="col-6 col-md-2 fw-800 text-muted">BIOCARE</div>
+          <div class="col-6 col-md-2 fw-800 text-muted">PUREHEALTH</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Problem/Solution ──────────────────────────────── -->
+  <section class="py-5 mt-5">
+    <div class="container">
+        <div class="row align-items-center g-5">
+            <div class="col-lg-5 reveal">
+                <h2 class="fw-800 mb-4">Why VitalSync?</h2>
+                <p class="text-secondary mb-5">Healthcare is often fragmented. Data is scattered across clinics, making it hard for you and your doctor to see the full picture.</p>
+                
+                <div class="problem-item">
+                    <div class="num">1</div>
+                    <div>
+                        <h5>Real-time Sync</h5>
+                        <p class="text-muted small mb-0">No more waiting for the next visit. Your data is updated instantly for your doctor to review.</p>
+                    </div>
+                </div>
+                <div class="problem-item">
+                    <div class="num">2</div>
+                    <div>
+                        <h5>Centralized Records</h5>
+                        <p class="text-muted small mb-0">All your prescriptions, vitals, and diagnoses in one secure, accessible place.</p>
+                    </div>
+                </div>
+                <div class="problem-item">
+                    <div class="num">3</div>
+                    <div>
+                        <h5>Proactive Monitoring</h5>
+                        <p class="text-muted small mb-0">Our system detects abnormalities and alerts you before they become emergencies.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-7 reveal" style="transition-delay: 0.3s;">
+                <div class="vs-card p-5 border-0 shadow-lg text-center" style="background: linear-gradient(135deg, #1e293b, #0f172a); color: #fff;">
+                    <div class="mb-4" style="font-size: 5rem;">🧬</div>
+                    <h3 class="fw-700 mb-3">Bridging the Communication Gap</h3>
+                    <p class="opacity-75 mb-4 px-lg-5">We use AI and real-time data streaming to ensure your healthcare provider is always informed, allowing for better diagnosis and personalized care.</p>
+                    <div class="d-flex justify-content-center gap-4">
+                        <div class="text-center">
+                            <h4 class="fw-800 mb-0">98%</h4>
+                            <div class="small opacity-50">Accuracy</div>
+                        </div>
+                        <div class="vr mx-2 opacity-25"></div>
+                        <div class="text-center">
+                            <h4 class="fw-800 mb-0">2.5s</h4>
+                            <div class="small opacity-50">Sync Latency</div>
+                        </div>
+                        <div class="vr mx-2 opacity-25"></div>
+                        <div class="text-center">
+                            <h4 class="fw-800 mb-0">24/7</h4>
+                            <div class="small opacity-50">Up-time</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+  </section>
+
+  <!-- ── Features ──────────────────────────────────────── -->
+  <section id="features" class="py-5 mt-5">
+    <div class="container">
+      <div class="text-center mb-5 reveal">
+        <h2 class="fw-800 fs-1">Core Capabilities</h2>
+        <p class="text-muted max-w-600 mx-auto">A comprehensive suite of tools designed for the modern healthcare era.</p>
+      </div>
+      <div class="row g-4">
+        <div class="col-md-4 reveal" style="transition-delay: 0.1s;">
+          <div class="feature-card">
+            <div class="icon-wrap bg-heart"><i class="fas fa-heartbeat"></i></div>
+            <h5 class="fw-700">Real-Time Vitals</h5>
+            <p class="text-muted small">Track heart rate, blood pressure, oxygen levels, and temperature with high-precision charts.</p>
+          </div>
+        </div>
+        <div class="col-md-4 reveal" style="transition-delay: 0.2s;">
+          <div class="feature-card">
+            <div class="icon-wrap bg-bp"><i class="fas fa-calendar-check"></i></div>
+            <h5 class="fw-700">Smart Scheduling</h5>
+            <p class="text-muted small">AI-assisted appointment management that optimizes doctor-patient interaction times.</p>
+          </div>
+        </div>
+        <div class="col-md-4 reveal" style="transition-delay: 0.3s;">
+          <div class="feature-card">
+            <div class="icon-wrap bg-oxy"><i class="fas fa-file-medical"></i></div>
+            <h5 class="fw-700">Digital History</h5>
+            <p class="text-muted small">Securely store and access your entire medical roadmap including tests and vaccinations.</p>
+          </div>
+        </div>
+        <div class="col-md-4 reveal" style="transition-delay: 0.1s;">
+          <div class="feature-card">
+            <div class="icon-wrap bg-temp"><i class="fas fa-shield-alt"></i></div>
+            <h5 class="fw-700">Military-Grade Security</h5>
+            <p class="text-muted small">Your data is encrypted end-to-end using AES-256 and protected by robust JWT auth.</p>
+          </div>
+        </div>
+        <div class="col-md-4 reveal" style="transition-delay: 0.2s;">
+          <div class="feature-card">
+            <div class="icon-wrap bg-heart"><i class="fas fa-chart-pie"></i></div>
+            <h5 class="fw-700">Predictive Analytics</h5>
+            <p class="text-muted small">Advanced algorithms identify potential health risks before they surface.</p>
+          </div>
+        </div>
+        <div class="col-md-4 reveal" style="transition-delay: 0.3s;">
+          <div class="feature-card">
+            <div class="icon-wrap bg-bp"><i class="fas fa-mobile-alt"></i></div>
+            <h5 class="fw-700">Mobile First</h5>
+            <p class="text-muted small">Access your health data anywhere, anytime, on any device with our responsive platform.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── How It Works ───────────────────────────────────── -->
+  <section id="how-it-works" class="py-5 bg-white border-top">
+    <div class="container text-center reveal">
+      <h2 class="fw-800 mb-5">Seamless Onboarding</h2>
+      <div class="row g-4">
+        <div class="col-md-3">
+          <div class="mb-4" style="font-size:3rem;">✍️</div>
+          <h6 class="fw-700">1. Setup Account</h6>
+          <p class="text-muted small px-3">Quick registration process as a patient or medical professional.</p>
+        </div>
+        <div class="col-md-3">
+          <div class="mb-4" style="font-size:3rem;">⌚</div>
+          <h6 class="fw-700">2. Connect Devices</h6>
+          <p class="text-muted small px-3">Link your wearable devices or manually log your vitals daily.</p>
+        </div>
+        <div class="col-md-3">
+          <div class="mb-4" style="font-size:3rem;">🤝</div>
+          <h6 class="fw-700">3. Find Specialists</h6>
+          <p class="text-muted small px-3">Connect with certified doctors and share your health data.</p>
+        </div>
+        <div class="col-md-3">
+          <div class="mb-4" style="font-size:3rem;">🎯</div>
+          <h6 class="fw-700">4. Live Better</h6>
+          <p class="text-muted small px-3">Receive real-time feedback and maintain optimal health levels.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── FAQ ────────────────────────────────────────────── -->
+  <section id="faq" class="py-5 bg-light">
+      <div class="container reveal">
+          <div class="text-center mb-5">
+              <h2 class="fw-800">Frequently Asked Questions</h2>
+          </div>
+          <div class="max-w-800 mx-auto px-lg-5">
+              <div class="faq-item">
+                  <div class="faq-trigger" onclick="toggleFaq(this)">
+                      <span>Is my medical data secure?</span>
+                      <i class="fas fa-chevron-down"></i>
+                  </div>
+                  <div class="faq-content d-none">
+                      Yes, VitalSync uses end-to-end encryption and follows strict healthcare data protection standards. Your data is only accessible by you and the doctors you explicitly grant access to.
+                  </div>
+              </div>
+              <div class="faq-item">
+                <div class="faq-trigger" onclick="toggleFaq(this)">
+                    <span>How do doctors see my vitals?</span>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="faq-content d-none">
+                    Once you've registered and selected a doctor, your synchronized health data appears directly on their professional dashboard in real-time.
+                </div>
+            </div>
+            <div class="faq-item">
+                <div class="faq-trigger" onclick="toggleFaq(this)">
+                    <span>Can I use VitalSync without health devices?</span>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="faq-content d-none">
+                    Absolutely! While we support automated device syncing, you can manually input your vitals (blood pressure, temperature, etc.) at any time.
+                </div>
+            </div>
+          </div>
+      </div>
+  </section>
+
+  <!-- ── CTA ───────────────────────────────────────────── -->
+  <section class="py-5" style="background: linear-gradient(135deg, #2563eb, #7c3aed);">
+    <div class="container text-center text-white py-4 reveal">
+      <h2 class="fw-800 mb-4 fs-1">Empower Your Health Journey</h2>
+      <p class="opacity-75 mb-5 fs-5">Join our community of over 10,000+ active users managing their health smarter.</p>
+      <div class="d-flex justify-content-center gap-3 flex-wrap">
+          <a href="register.html" class="btn btn-light px-5 py-3 fw-700 rounded-pill text-primary">Join VitalSync Now</a>
+          <a href="login.html" class="btn btn-outline-light px-5 py-3 fw-700 rounded-pill">Developer Docs</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Footer ─────────────────────────────────────────── -->
+  <footer class="bg-dark text-white pt-5 pb-4">
+    <div class="container">
+        <div class="row g-4 mb-5">
+            <div class="col-lg-4">
+                <h4 class="fw-800 mb-3 text-white">💙 Vital<span>Sync</span></h4>
+                <p class="opacity-50 small pe-lg-4">The ultimate platform for health data synchronization, connecting patients and providers through real-time technology.</p>
+                <div class="d-flex gap-3 fs-5 mt-4 opacity-75">
+                    <i class="fab fa-twitter"></i>
+                    <i class="fab fa-linkedin"></i>
+                    <i class="fab fa-facebook"></i>
+                    <i class="fab fa-instagram"></i>
+                </div>
+            </div>
+            <div class="col-6 col-md-3 col-lg-2">
+                <h6 class="fw-700 mb-3">Product</h6>
+                <ul class="list-unstyled small opacity-75">
+                    <li class="mb-2">Features</li>
+                    <li class="mb-2">Security</li>
+                    <li class="mb-2">API</li>
+                    <li class="mb-2">Mobile App</li>
+                </ul>
+            </div>
+            <div class="col-6 col-md-3 col-lg-2">
+                <h6 class="fw-700 mb-3">Company</h6>
+                <ul class="list-unstyled small opacity-75">
+                    <li class="mb-2">About Us</li>
+                    <li class="mb-2">Careers</li>
+                    <li class="mb-2">Medical Partners</li>
+                    <li class="mb-2">Contact</li>
+                </ul>
+            </div>
+            <div class="col-md-6 col-lg-4">
+                <h6 class="fw-700 mb-3">Stay Updated</h6>
+                <p class="small opacity-50 mb-3">Get the latest health tech insights delivered to your inbox.</p>
+                <div class="input-group mb-3">
+                    <input type="text" class="form-control bg-transparent text-white border-secondary" placeholder="Email address">
+                    <button class="btn btn-primary" type="button"><i class="fas fa-paper-plane"></i></button>
+                </div>
+            </div>
+        </div>
+        <div class="border-top border-secondary pt-4 text-center">
+            <p class="mb-0 small opacity-50">© 2026 VitalSync – Smart Health Data Synchronization System. All rights reserved.</p>
+        </div>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    // FAQ Toggle
+    function toggleFaq(el) {
+        const content = el.nextElementSibling;
+        const icon = el.querySelector('i');
+        content.classList.toggle('d-none');
+        icon.classList.toggle('fa-chevron-up');
+        icon.classList.toggle('fa-chevron-down');
+    }
+
+    // Scroll Reveal Logic
+    function reveal() {
+        var reveals = document.querySelectorAll(".reveal");
+        for (var i = 0; i < reveals.length; i++) {
+            var windowHeight = window.innerHeight;
+            var elementTop = reveals[i].getBoundingClientRect().top;
+            var elementVisible = 150;
+            if (elementTop < windowHeight - elementVisible) {
+                reveals[i].classList.add("active");
+            }
+        }
+    }
+    window.addEventListener("scroll", reveal);
+    window.addEventListener("load", reveal);
+
+    // If already logged in, show dashboard link
+    if (isLoggedIn()) {
+      const user = getUser();
+      document.querySelectorAll('a[href="login.html"]').forEach(a => {
+        a.href = user.role === 'doctor' ? 'doctor-dashboard.html' : 'patient-dashboard.html';
+        a.textContent = 'My Dashboard';
+        a.classList.remove('text-white');
+        a.classList.add('btn', 'btn-outline-light', 'ms-2');
+      });
+      // Also update the register button to 'Go to Dashboard'
+      document.querySelectorAll('a[href="register.html"]').forEach(a => {
+          a.href = user.role === 'doctor' ? 'doctor-dashboard.html' : 'patient-dashboard.html';
+          a.textContent = 'Go to Dashboard';
+      });
+    }
+  </script>
+</body>
+</html>

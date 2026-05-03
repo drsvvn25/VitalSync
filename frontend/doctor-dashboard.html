@@ -1,0 +1,1249 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self';
+                 script-src 'self' 'unsafe-inline' 'unsafe-eval' cdn.jsdelivr.net cdnjs.cloudflare.com cdn.socket.io;
+                 style-src  'self' 'unsafe-inline' cdn.jsdelivr.net cdnjs.cloudflare.com fonts.googleapis.com;
+                 font-src   'self' data: fonts.gstatic.com cdnjs.cloudflare.com;
+                 connect-src 'self' http://localhost:5000 ws://localhost:5000 https://cdn.jsdelivr.net https://cdn.socket.io https://cdnjs.cloudflare.com;
+                 img-src 'self' data:;">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doctor Dashboard – VitalSync</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+    <style>
+        .welcome-banner {
+            background: linear-gradient(135deg, #0f2027, #203a43 50%, #2c5364);
+            border-radius: 14px;
+            padding: 22px 28px;
+            color: #fff;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .welcome-banner h4 {
+            margin: 0;
+            font-weight: 700;
+            font-size: 1.25rem;
+        }
+
+        .welcome-banner p {
+            margin: 4px 0 0;
+            opacity: 0.8;
+            font-size: 0.88rem;
+        }
+
+        .last-updated {
+            font-size: 0.72rem;
+            opacity: 0.65;
+            margin-top: 4px;
+        }
+
+        .refresh-btn {
+            background: rgba(255, 255, 255, .15);
+            border: 1px solid rgba(255, 255, 255, .3);
+            color: #fff;
+            border-radius: 8px;
+            padding: 6px 14px;
+            font-size: 0.82rem;
+            cursor: pointer;
+        }
+
+        .refresh-btn:hover {
+            background: rgba(255, 255, 255, .25);
+        }
+
+        .stat-mini {
+            background: #fff;
+            border-radius: 10px;
+            border: 1px solid #e2e8f0;
+            padding: 14px 18px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, .05);
+        }
+
+        .stat-mini .sm-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+
+        .stat-mini .sm-val {
+            font-size: 1.5rem;
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        .stat-mini .sm-lbl {
+            font-size: 0.76rem;
+            color: #64748b;
+        }
+
+        .patient-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 14px 16px;
+            margin-bottom: 8px;
+            transition: box-shadow 0.2s;
+            background: #fff;
+        }
+
+        .patient-card:hover {
+            box-shadow: 0 4px 16px rgba(0, 0, 0, .08);
+        }
+
+        .patient-av {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: #fff;
+            font-size: 0.9rem;
+            flex-shrink: 0;
+            background: linear-gradient(135deg, #0d6efd, #6c63ff);
+        }
+
+        .appt-row {
+            display: flex;
+            align-items: start;
+            gap: 12px;
+            padding: 10px 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .appt-row:last-child {
+            border-bottom: none;
+        }
+
+        .appt-row .ar-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            background: #eff6ff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 1.1rem;
+        }
+
+        .today-badge {
+            background: #fef3c7;
+            color: #92400e;
+            border-radius: 50px;
+            font-size: 0.68rem;
+            font-weight: 700;
+            padding: 2px 8px;
+            display: inline-block;
+            margin-left: 6px;
+        }
+
+        .alert-patient {
+            border-left: 4px solid #ef4444;
+            padding: 10px 14px;
+            border-radius: 0 8px 8px 0;
+            background: #fef2f2;
+            margin-bottom: 8px;
+        }
+
+        /* Critical Alert Banner */
+        .critical-alert-banner {
+            background: linear-gradient(135deg, #7f1d1d, #ef4444);
+            color: #fff;
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            animation: pulse-red 1.5s infinite;
+        }
+
+        @keyframes pulse-red {
+
+            0%,
+            100% {
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+            }
+
+            50% {
+                box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+            }
+        }
+
+        /* SOS alert */
+        .sos-banner {
+            background: linear-gradient(135deg, #1e1b4b, #7c3aed);
+            color: #fff;
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            animation: pulse-purple 1.5s infinite;
+        }
+
+        @keyframes pulse-purple {
+
+            0%,
+            100% {
+                box-shadow: 0 0 0 0 rgba(124, 58, 237, 0.4);
+            }
+
+            50% {
+                box-shadow: 0 0 0 10px rgba(124, 58, 237, 0);
+            }
+        }
+
+        /* Notification badge */
+        .notif-badge {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            background: #ef4444;
+            color: #fff;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            font-size: 0.65rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+        }
+
+        /* Risk badge in patient list */
+        .risk-badge-sm {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 50px;
+            font-size: 0.7rem;
+            font-weight: 700;
+        }
+
+        .risk-low {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .risk-medium {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .risk-high {
+            background: #fee2e2;
+            color: #7f1d1d;
+        }
+
+        /* Notifications panel */
+        .notif-item {
+            padding: 10px 14px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            border-left: 4px solid;
+            font-size: 0.85rem;
+        }
+
+        .notif-item.critical {
+            background: #fef2f2;
+            border-color: #ef4444;
+        }
+
+        .notif-item.sos {
+            background: #f5f3ff;
+            border-color: #7c3aed;
+        }
+
+        .notif-item.reminder {
+            background: #f0fdf4;
+            border-color: #22c55e;
+        }
+
+        .notif-item.unread {
+            font-weight: 600;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="dashboard-wrapper">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <a href="doctor-dashboard.html" class="sidebar-brand">💙 Vital<span>Sync</span></a>
+            <nav class="mt-2">
+                <a href="doctor-dashboard.html" class="nav-link active"><i class="fas fa-home"></i> Dashboard</a>
+                <a href="patient-list.html" class="nav-link"><i class="fas fa-users"></i> My Patients</a>
+                <a href="medical-records.html?mode=doctor" class="nav-link"><i class="fas fa-file-medical"></i> Add
+                    Diagnosis</a>
+                <a href="prescriptions.html" class="nav-link"><i class="fas fa-pills"></i> Prescriptions</a>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <div class="user-avatar" id="sidebar-avatar">D</div>
+                    <div>
+                        <div class="fw-600 text-white small" id="sidebar-user-name">Doctor</div>
+                        <div class="text-muted" style="font-size:0.75rem;" id="sidebar-spec">Healthcare Provider</div>
+                    </div>
+                </div>
+                <button class="btn btn-outline-danger btn-sm w-100 mt-1" onclick="logout()">
+                    <i class="fas fa-sign-out-alt me-1"></i> Logout
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main -->
+        <main class="main-content">
+
+            <!-- Welcome Banner -->
+            <div class="welcome-banner">
+                <div>
+                    <h4 id="welcome-greeting">Good morning, Doctor 👋</h4>
+                    <p id="welcome-sub">Here's your clinic overview for today.</p>
+                    <div class="last-updated">Last updated: <span id="last-updated-time">—</span></div>
+                </div>
+                <div class="d-flex gap-2 flex-wrap align-items-center">
+                    <a href="patient-list.html" class="btn btn-sm"
+                        style="background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.3);">
+                        <i class="fas fa-users me-1"></i>Patients
+                    </a>
+                    <a href="medical-records.html?mode=doctor" class="btn btn-sm"
+                        style="background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.3);">
+                        <i class="fas fa-file-medical me-1"></i>Add Record
+                    </a>
+                    <!-- Notification bell with badge -->
+                    <div class="position-relative" style="cursor:pointer;" onclick="loadNotificationsPanel()"
+                        title="View Alerts">
+                        <button class="refresh-btn"><i class="fas fa-bell me-1"></i>Alerts <span id="notif-count-badge"
+                                style="display:none;background:#ef4444;color:#fff;border-radius:50%;width:16px;height:16px;font-size:0.65rem;display:inline-flex;align-items:center;justify-content:center;margin-left:4px;"
+                                id="bell-badge">0</span></button>
+                    </div>
+                    <button class="refresh-btn" onclick="refreshAll()"><i
+                            class="fas fa-sync-alt me-1"></i>Refresh</button>
+                </div>
+            </div>
+
+            <!-- Critical Alert Banners (populated by socket events) -->
+            <div id="alert-banners-container"></div>
+
+            <!-- ── Row 1: 4 KPI Cards ─────────────────────────────── -->
+            <div class="row g-3 mb-4">
+                <div class="col-6 col-md-3">
+                    <div class="kpi-card">
+                        <div class="kpi-icon bg-oxy"><i class="fas fa-users text-success"></i></div>
+                        <div>
+                            <div class="kpi-val" id="kpi-patients">--</div>
+                            <div class="kpi-label">Total Patients</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="kpi-card">
+                        <div class="kpi-icon bg-temp"><i class="fas fa-clock text-warning"></i></div>
+                        <div>
+                            <div class="kpi-val" id="kpi-pending">--</div>
+                            <div class="kpi-label">Awaiting Confirmation</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="kpi-card">
+                        <div class="kpi-icon bg-bp"><i class="fas fa-check-circle text-primary"></i></div>
+                        <div>
+                            <div class="kpi-val" id="kpi-confirmed">--</div>
+                            <div class="kpi-label">Confirmed</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="kpi-card">
+                        <div class="kpi-icon bg-heart"><i class="fas fa-calendar-check text-danger"></i></div>
+                        <div>
+                            <div class="kpi-val" id="kpi-completed">--</div>
+                            <div class="kpi-label">Completed</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Summary Stats Row -->
+            <div class="row g-3 mb-4">
+                <div class="col-6 col-lg-3">
+                    <div class="stat-mini">
+                        <div class="sm-icon" style="background:#fef2f2;"><i
+                                class="fas fa-exclamation-triangle text-danger"></i></div>
+                        <div>
+                            <div class="sm-val" id="stat-abnormal">0</div>
+                            <div class="sm-lbl">Abnormal Vitals</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-lg-3">
+                    <div class="stat-mini">
+                        <div class="sm-icon" style="background:#f0fdf4;"><i
+                                class="fas fa-file-prescription text-success"></i></div>
+                        <div>
+                            <div class="sm-val" id="stat-records">0</div>
+                            <div class="sm-lbl">Records Written</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-lg-3">
+                    <div class="stat-mini">
+                        <div class="sm-icon" style="background:#fffbeb;"><i
+                                class="fas fa-calendar-day text-warning"></i></div>
+                        <div>
+                            <div class="sm-val" id="stat-today">0</div>
+                            <div class="sm-lbl">Today's Appointments</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-lg-3">
+                    <div class="stat-mini">
+                        <div class="sm-icon" style="background:#eff6ff;"><i class="fas fa-percent text-primary"></i>
+                        </div>
+                        <div>
+                            <div class="sm-val" id="stat-completion">0%</div>
+                            <div class="sm-lbl">Completion Rate</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Notifications Panel (collapsible) ──────────────── -->
+            <div class="vs-card mb-4" id="notifications-panel" style="display:none;">
+                <div class="vs-card-header">
+                    <h5><i class="fas fa-bell me-2 text-danger"></i>🔔 Recent Alerts & Notifications
+                        <span class="badge bg-danger ms-2" id="notif-unread-count">0</span>
+                    </h5>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-vs-outline btn-sm" onclick="markAllNotifRead()">Mark All Read</button>
+                        <button class="btn btn-vs-outline btn-sm"
+                            onclick="document.getElementById('notifications-panel').style.display='none'">✕
+                            Close</button>
+                    </div>
+                </div>
+                <div id="notifications-list">
+                    <div class="spinner-vs">
+                        <div class="spinner-border text-primary spinner-border-sm"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Patients with Abnormal Vitals -->
+            <div class="vs-card mb-4" id="abnormal-section" style="display:none;">
+                <div class="vs-card-header">
+                    <h5><i class="fas fa-exclamation-triangle me-2 text-danger"></i>⚠️ Patients with Abnormal Vitals</h5>
+                </div>
+                <div id="abnormal-list"></div>
+            </div>
+
+            <!-- AI Risk Watchlist -->
+            <div class="vs-card mb-4" id="risk-section" style="display:none; border:2px solid #7c3aed;">
+                <div class="vs-card-header" style="background:#f5f3ff;">
+                    <h5><i class="fas fa-brain me-2" style="color:#7c3aed;"></i>🧠 AI High-Risk Watchlist</h5>
+                    <span class="badge bg-danger">Predictive</span>
+                </div>
+                <div id="risk-list" class="table-responsive p-3">
+                    <table class="table mb-0 align-middle">
+                        <tbody id="risk-list-body"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ── Row 2: Chart + Pending Appointments ────────────── -->
+
+            <div class="row g-4 mb-4">
+                <div class="col-lg-4">
+                    <div class="vs-card">
+                        <div class="vs-card-header">
+                            <h5><i class="fas fa-chart-pie me-2 text-primary"></i>Appointment Status</h5>
+                        </div>
+                        <div style="height:220px;"><canvas id="appt-chart"></canvas></div>
+                    </div>
+                </div>
+                <div class="col-lg-8">
+                    <div class="vs-card">
+                        <div class="vs-card-header">
+                            <h5><i class="fas fa-calendar-alt me-2 text-primary"></i>Awaiting Confirmation
+                                <span class="badge bg-warning text-dark ms-2" id="pending-count">0</span>
+                            </h5>
+                            <a href="patient-list.html" class="btn btn-vs-outline btn-sm">View All Patients</a>
+                        </div>
+                        <div id="pending-list">
+                            <div class="spinner-vs">
+                                <div class="spinner-border text-primary spinner-border-sm"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Row 3: All Appointments + Patients ── -->
+            <div class="row g-4 mb-4">
+                <div class="col-lg-7">
+                    <div class="vs-card">
+                        <div class="vs-card-header">
+                            <h5><i class="fas fa-list me-2 text-primary"></i>All Appointments</h5>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="vs-table w-100">
+                                <thead>
+                                    <tr>
+                                        <th>Patient</th>
+                                        <th>Token</th>
+                                        <th>Date & Time</th>
+                                        <th>Status</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="all-appointments-body">
+                                    <tr>
+                                        <td colspan="5" class="text-center text-muted py-3">Loading…</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-7">
+                    <div class="vs-card">
+                        <div class="vs-card-header">
+                            <h5><i class="fas fa-bed me-2 text-primary"></i>Clinic Bed Allocations</h5>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="vs-table w-100">
+                                <thead>
+                                    <tr>
+                                        <th>Bed</th>
+                                        <th>Status</th>
+                                        <th>Patient Details</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="beds-list-body">
+                                    <tr>
+                                        <td colspan="4" class="text-center text-muted py-3">Loading…</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="vs-card mt-4">
+                        <div class="vs-card-header">
+                            <h5><i class="fas fa-tint me-2 text-danger"></i>Blood Bank Inventory</h5>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="vs-table w-100">
+                                <thead>
+                                    <tr>
+                                        <th>Blood Group</th>
+                                        <th>Available Units</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="blood-list-body">
+                                    <tr>
+                                        <td colspan="3" class="text-center text-muted py-3">Loading…</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-5">
+                    <div class="vs-card h-100">
+                        <div class="vs-card-header">
+                            <h5><i class="fas fa-user-injured me-2 text-primary"></i>My Patients</h5>
+                            <a href="patient-list.html" class="btn btn-vs-outline btn-sm">View All</a>
+                        </div>
+                        <div id="patients-list">
+                            <div class="spinner-vs">
+                                <div class="spinner-border text-primary spinner-border-sm"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+    <div id="toast-container"></div>
+
+    <!-- SOS Emergency Modal (triggered by socket event) -->
+    <div class="modal fade" id="sos-emergency-modal" tabindex="-1" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0"
+                style="border-radius:16px;overflow:hidden;border:3px solid #7c3aed !important;">
+                <div class="modal-header"
+                    style="background:linear-gradient(135deg,#1e1b4b,#7c3aed);color:#fff;border:none;">
+                    <h5 class="modal-title">🆘 PATIENT EMERGENCY SOS</h5>
+                </div>
+                <div class="modal-body text-center py-4">
+                    <div style="font-size:4rem;animation:sos-pulse 1s infinite;">🚨</div>
+                    <h4 class="fw-700 text-danger mt-2" id="sos-patient-name">Patient Name</h4>
+                    <p id="sos-modal-message" class="fw-600 text-dark mt-2"></p>
+                    <div class="text-muted small" id="sos-modal-time"></div>
+                </div>
+                <div class="modal-footer border-0 justify-content-center pb-4">
+                    <button class="btn btn-danger fw-700 px-5" data-bs-dismiss="modal" onclick="acknowledgeSOS()">✅
+                        Acknowledge</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/charts.js"></script>
+    <script>
+        requireAuth(['doctor']);
+        populateSidebarUser();
+        const user = getUser();
+
+        // ── Socket.io ─────────────────────────────────────────────
+        const socket = io('http://localhost:5000', { transports: ['websocket', 'polling'] });
+        socket.on('connect', () => {
+            // Send BOTH userId and role so the server joins us to the 'doctors' broadcast room
+            socket.emit('join_room', { userId: user.id, role: user.role });
+            console.log('✅ Socket connected, joined room user_' + user.id + ' and doctors broadcast room');
+        });
+        socket.on('connect_error', (err) => {
+            console.warn('⚠️ Socket connection error:', err.message);
+        });
+
+        // Track shown SOS alerts to prevent duplicate display from broadcast + personal room
+        const shownSOS = new Set();
+
+        // Critical health alert from patient vitals
+        socket.on('critical_alert', (data) => {
+            console.log('🚨 Critical alert received via socket:', data);
+            showCriticalAlertBanner(data);
+            showToast(`🚨 Critical alert: ${data.patient_name} – ${data.vital_type}: ${data.value}`, 'error');
+            loadNotificationsPanel();
+        });
+
+        // Emergency SOS from patient
+        socket.on('emergency_sos', (data) => {
+            const key = data.id || `${data.patient_id}_${data.timestamp}`;
+            if (shownSOS.has(key)) return; // deduplicate
+            shownSOS.add(key);
+            console.log('🆘 Emergency SOS received via socket:', data);
+            showSOSModal(data);
+            showToast(`🆘 EMERGENCY SOS from ${data.patient_name}!`, 'error');
+            showSOSBanner(data);
+            loadNotificationsPanel();
+            loadAppointments(); // Auto-load to show the new emergency appointment!
+        });
+
+        // ── Polling Fallback: Check unread critical/SOS every 10 seconds ──
+        // This guarantees alert display even if socket.io fails
+        const shownPolledAlerts = new Set();
+        async function pollCriticalAlerts() {
+            try {
+                const res = await apiFetch('/notifications/unread-critical');
+                if (!res || !res.ok || res.data.count === 0) return;
+
+                for (const alert of res.data.alerts) {
+                    const key = `poll_${alert.id}`;
+                    if (shownPolledAlerts.has(key)) continue;
+                    shownPolledAlerts.add(key);
+
+                    const data = {
+                        id: alert.id,
+                        patient_name: alert.patient_name || 'Patient',
+                        patient_id: alert.patient_id,
+                        message: alert.message,
+                        vital_type: alert.vital_type,
+                        value: alert.value,
+                        timestamp: alert.created_at,
+                    };
+
+                    if (alert.type === 'sos') {
+                        console.log('🆘 SOS detected via polling fallback:', data);
+                        showSOSModal(data);
+                        showSOSBanner(data);
+                        showToast(`🆘 EMERGENCY SOS from ${data.patient_name}!`, 'error');
+                    } else if (alert.type === 'critical') {
+                        console.log('🚨 Critical alert detected via polling fallback:', data);
+                        showCriticalAlertBanner(data);
+                        showToast(`🚨 Critical: ${data.patient_name} – ${data.vital_type}: ${data.value}`, 'error');
+                    }
+
+                    // Update bell badge
+                    const badge = document.getElementById('bell-badge');
+                    badge.textContent = res.data.count;
+                    badge.style.display = 'inline-flex';
+                }
+            } catch (e) { /* silent fail */ }
+        }
+
+        // Start polling immediately + every 10 seconds
+        pollCriticalAlerts();
+        setInterval(pollCriticalAlerts, 10000);
+
+        // Emergency appointment from a patient via AI Triage
+        socket.on('emergency_appointment', (data) => {
+            console.log('🚨 Emergency APPOINTMENT received via socket:', data);
+            const container = document.getElementById('alert-banners-container');
+            const div = document.createElement('div');
+            div.className = 'critical-alert-banner';
+            div.innerHTML = `
+                <div style="font-size:1.6rem;flex-shrink:0;">🚨</div>
+                <div class="flex-grow-1">
+                    <div class="fw-700" style="font-size:1rem;">Emergency Appointment: ${data.patient_name}</div>
+                    <div style="opacity:0.9;font-size:0.85rem;margin-top:2px;">${data.message}</div>
+                    <div style="margin-top:4px;"><span style="background:rgba(255,255,255,.2);border-radius:4px;padding:2px 10px;font-weight:700;font-family:monospace;">Token: ${data.queue_token}</span></div>
+                    <div style="opacity:0.7;font-size:0.75rem;margin-top:2px;">${new Date(data.timestamp).toLocaleString('en-IN')}</div>
+                </div>
+                <button class="btn btn-sm" style="background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.3);flex-shrink:0;"
+                    onclick="this.closest('.critical-alert-banner').remove()">✕</button>`;
+            container.prepend(div);
+            showToast(`🚨 Emergency appointment from ${data.patient_name}! Token: ${data.queue_token}`, 'error');
+            loadNotificationsPanel();
+            loadAppointments(); // Refresh appointment list
+            setTimeout(() => div.remove(), 60000);
+        });
+
+
+        async function acknowledgeAlert(id) {
+            if (!id) return;
+            const res = await apiFetch(`/notifications/read/${id}`, { method: 'PUT' });
+            if (res?.ok) {
+                console.log(`✅ Alert ${id} acknowledged.`);
+                loadNotificationsPanel();
+            }
+        }
+
+        function showCriticalAlertBanner(data) {
+            const container = document.getElementById('alert-banners-container');
+            const div = document.createElement('div');
+            div.className = 'critical-alert-banner';
+            div.innerHTML = `
+                <div style="font-size:1.6rem;flex-shrink:0;">🚨</div>
+                <div class="flex-grow-1">
+                    <div class="fw-700" style="font-size:1rem;">Critical Alert: ${data.patient_name}</div>
+                    <div style="opacity:0.9;font-size:0.85rem;margin-top:2px;">${data.message}</div>
+                    <div style="opacity:0.7;font-size:0.75rem;margin-top:2px;">${new Date(data.timestamp).toLocaleString('en-IN')}</div>
+                </div>
+                <button class="btn btn-sm" style="background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.3);flex-shrink:0;"
+                    onclick="acknowledgeAlert(${data.id || 'null'}); this.closest('.critical-alert-banner').remove()">✕</button>`;
+            container.prepend(div);
+            // Auto-remove after 30 seconds
+            setTimeout(() => div.remove(), 30000);
+        }
+
+        function showSOSBanner(data) {
+            const container = document.getElementById('alert-banners-container');
+            const div = document.createElement('div');
+            div.className = 'sos-banner';
+            div.innerHTML = `
+                <div style="font-size:1.6rem;flex-shrink:0;">🆘</div>
+                <div class="flex-grow-1">
+                    <div class="fw-700" style="font-size:1rem;">Emergency SOS: ${data.patient_name}</div>
+                    <div style="opacity:0.9;font-size:0.85rem;margin-top:2px;">${data.message}</div>
+                    <div style="opacity:0.7;font-size:0.75rem;margin-top:2px;">${new Date(data.timestamp).toLocaleString('en-IN')}</div>
+                </div>
+                <button class="btn btn-sm" style="background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.3);flex-shrink:0;"
+                    onclick="acknowledgeAlert(${data.id || 'null'}); this.closest('.sos-banner').remove()">✕</button>`;
+            container.prepend(div);
+        }
+
+        function showSOSModal(data) {
+            document.getElementById('sos-patient-name').textContent = data.patient_name;
+            document.getElementById('sos-modal-message').textContent = data.message;
+            document.getElementById('sos-modal-time').textContent = new Date(data.timestamp).toLocaleString('en-IN');
+            const modal = new bootstrap.Modal(document.getElementById('sos-emergency-modal'));
+            
+            // Update acknowledge button to use ID
+            const ackBtn = document.querySelector('#sos-emergency-modal .btn-danger');
+            if (ackBtn && data.id) {
+                ackBtn.onclick = () => {
+                    acknowledgeAlert(data.id);
+                };
+            }
+            
+            modal.show();
+        }
+
+        // ── Welcome greeting & Profile ───────────────────────────────
+        (function () {
+            const h = new Date().getHours();
+            const g = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+            document.getElementById('welcome-greeting').textContent = `${g}, ${user.name} 👋`;
+            document.getElementById('welcome-sub').innerHTML =
+                `Today is ${new Date().toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}`;
+        })();
+
+        async function loadDoctorProfile() {
+            const res = await apiFetch('/doctor/profile');
+            if (res && res.ok && res.data.doctor) {
+                const doc = res.data.doctor;
+                // Update sidebar
+                document.getElementById('sidebar-spec').textContent = doc.specialization + (doc.clinic_name ? ` • ${doc.clinic_name}` : '');
+                
+                // Update welcome banner with clinic info
+                if (doc.clinic_name) {
+                    const currentSub = document.getElementById('welcome-sub').innerHTML;
+                    document.getElementById('welcome-sub').innerHTML = currentSub + 
+                        `<br><span style="opacity:0.9;"><i class="fas fa-hospital mt-1 me-1"></i>${doc.clinic_name} – <small>${doc.clinic_address.split(',')[0]}</small></span>`;
+                }
+            }
+        }
+
+
+        function setLastUpdated() {
+            document.getElementById('last-updated-time').textContent = new Date().toLocaleTimeString('en-IN');
+        }
+
+        // ── Notifications ─────────────────────────────────────────
+        async function loadNotificationsPanel() {
+            const panel = document.getElementById('notifications-panel');
+            panel.style.display = '';
+            const res = await apiFetch('/notifications/my');
+            if (!res || !res.ok) return;
+            const { notifications, unread } = res.data;
+
+            // Update bell badge
+            const badge = document.getElementById('bell-badge');
+            badge.textContent = unread;
+            badge.style.display = unread > 0 ? 'inline-flex' : 'none';
+            document.getElementById('notif-unread-count').textContent = unread;
+
+            const el = document.getElementById('notifications-list');
+            if (notifications.length === 0) {
+                el.innerHTML = '<p class="text-muted small text-center py-3">No alerts yet. ✅</p>';
+                return;
+            }
+            el.innerHTML = notifications.slice(0, 15).map(n => `
+                <div class="notif-item ${n.type} ${n.is_read ? '' : 'unread'}">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <span class="badge ${n.type === 'critical' ? 'bg-danger' : n.type === 'sos' ? 'bg-purple' : 'bg-success'} me-2" style="background:${n.type === 'sos' ? '#7c3aed' : ''};">${n.type.toUpperCase()}</span>
+                            ${!n.is_read ? '<span class="badge bg-warning text-dark" style="font-size:0.65rem;">NEW</span>' : ''}
+                        </div>
+                        <small class="text-muted">${new Date(n.created_at).toLocaleString('en-IN')}</small>
+                    </div>
+                    <div class="mt-1">${n.message}</div>
+                    ${n.patient_name ? `<div class="text-muted small mt-1">Patient: ${n.patient_name}</div>` : ''}
+                </div>`).join('');
+        }
+
+        async function markAllNotifRead() {
+            await apiFetch('/notifications/read-all', { method: 'PUT', body: JSON.stringify({}) });
+            loadNotificationsPanel();
+            showToast('All notifications marked as read ✅');
+        }
+
+        async function acknowledgeSOS() {
+            // Acknowledging the SOS marks all notifications as read so the polling loop stops
+            await apiFetch('/notifications/read-all', { method: 'PUT', body: JSON.stringify({}) });
+            loadNotificationsPanel();
+            document.querySelectorAll('.sos-banner').forEach(b => b.remove());
+            showToast('Emergency acknowledged. ✅', 'success');
+        }
+
+        // ── Stats ─────────────────────────────────────────────────────
+        async function loadStats() {
+            const res = await apiFetch('/appointments/stats');
+            if (!res || !res.ok) return;
+            const s = res.data.stats;
+            document.getElementById('kpi-pending').textContent = s.pending;
+            document.getElementById('kpi-confirmed').textContent = s.confirmed;
+            document.getElementById('kpi-completed').textContent = s.completed;
+            const total = s.pending + s.confirmed + s.rejected + s.completed;
+            const rate = total > 0 ? Math.round((s.completed / total) * 100) : 0;
+            document.getElementById('stat-completion').textContent = rate + '%';
+            renderAppointmentChart('appt-chart', s);
+        }
+
+        // ── Appointments ─────────────────────────────────────────────
+        let allAppts = [];
+        async function loadAppointments() {
+            const res = await apiFetch('/appointments/list');
+            if (!res || !res.ok) return;
+            allAppts = res.data.appointments;
+            const today = new Date().toDateString();
+            const todayAppts = allAppts.filter(a => new Date(a.appointment_date).toDateString() === today);
+            document.getElementById('stat-today').textContent = todayAppts.length;
+
+            const pending = allAppts.filter(a => a.status === 'pending');
+            const pendingEl = document.getElementById('pending-list');
+
+            // Sort: high priority first (already sorted by backend but re-sort for safety)
+            const sortedPending = [...pending].sort((a, b) => (b.priority === 'high') - (a.priority === 'high'));
+            const emergencyCount = sortedPending.filter(a => a.priority === 'high').length;
+            if (emergencyCount > 0) document.getElementById('pending-count').innerHTML = `${pending.length} <span class="badge bg-danger ms-1">⚠️ ${emergencyCount} Emergency</span>`;
+            else document.getElementById('pending-count').textContent = pending.length;
+
+            pendingEl.innerHTML = sortedPending.map(a => {
+                const isToday = new Date(a.appointment_date).toDateString() === today;
+                const isHigh = a.priority === 'high';
+                return `<div class="appt-row" style="${isHigh ? 'border-left:4px solid #ef4444;background:#fef2f2;' : ''}">
+          <div class="ar-icon">${isHigh ? '🚨' : '📅'}</div>
+          <div class="flex-grow-1">
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+              <span class="fw-600 small">${a.patient_name}</span>
+              ${isHigh ? '<span class="badge bg-danger" style="font-size:0.65rem;animation:pulse 1.5s infinite;">🔴 HIGH PRIORITY</span>' : ''}
+              ${isToday ? '<span class="today-badge">TODAY</span>' : ''}
+            </div>
+            <div class="text-muted" style="font-size:0.76rem;">${new Date(a.appointment_date).toLocaleString('en-IN', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })} ${a.age ? '| Age: ' + a.age : ''}</div>
+            ${a.queue_token ? `<div style="font-size:0.72rem;margin-top:3px;"><span style="background:#eff6ff;color:#1d4ed8;padding:2px 8px;border-radius:4px;font-weight:700;font-family:monospace;">🎫 ${a.queue_token}</span> · Queue #${a.queue_position}</div>` : ''}
+            ${a.triage_result ? `<div class="text-muted" style="font-size:0.7rem;margin-top:2px;">🤖 ${a.triage_result}</div>` : ''}
+            ${a.notes ? `<div class="text-muted" style="font-size:0.72rem;"><i class="fas fa-sticky-note me-1"></i>${a.notes}</div>` : ''}
+          </div>
+          <div class="d-flex flex-column gap-1 flex-shrink-0">
+            <div class="d-flex gap-1">
+              <button class="btn btn-sm btn-success" title="Confirm" onclick="updateAppt(${a.id},'confirmed')">✅</button>
+              <button class="btn btn-sm btn-danger" title="Reject" onclick="updateAppt(${a.id},'rejected')">❌</button>
+            </div>
+            <button class="btn btn-xs btn-vs-primary mt-1" style="font-size:0.65rem;padding:2px 4px;" onclick='confirmAndRecord(${a.id}, ${a.patient_id}, ${JSON.stringify(a.notes || "")})'>Confirm & Record</button>
+          </div>
+        </div>`;
+            }).join('') || '<p class="text-muted small text-center py-3">No pending confirmations.</p>';
+
+
+            const tbody = document.getElementById('all-appointments-body');
+            tbody.innerHTML = allAppts.slice(0, 15).map(a => {
+                const statusMap = { pending: 'badge-pending', confirmed: 'badge-confirmed', rejected: 'badge-rejected', completed: 'badge-completed' };
+                return `<tr>
+        <td><strong>${a.patient_name}</strong><br><small class="text-muted">${a.gender || ''} ${a.age ? '| ' + a.age + 'yrs' : ''}</small></td>
+        <td>${a.queue_token ? `<span style="background:#eff6ff;color:#1d4ed8;padding:2px 8px;border-radius:4px;font-weight:700;font-family:monospace;">🎫 ${a.queue_token}</span>` : '<span class="text-muted small">—</span>'}</td>
+        <td><small>${new Date(a.appointment_date).toLocaleString('en-IN', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</small></td>
+        <td><span class="badge ${statusMap[a.status]}">${a.status === 'pending' ? 'awaiting' : a.status}</span></td>
+        <td>${a.status === 'pending' ? `
+            <div class="d-flex flex-column gap-1">
+              <div class="d-flex gap-1">
+                <button class="btn btn-xs btn-success" style="padding:2px 8px;font-size:0.75rem;" onclick="updateAppt(${a.id},'confirmed')">Confirm</button>
+                <button class="btn btn-xs btn-danger" style="padding:2px 8px;font-size:0.75rem;" onclick="updateAppt(${a.id},'rejected')">Reject</button>
+              </div>
+              <button class="btn btn-xs btn-primary" style="padding:2px 8px;font-size:0.7rem;background:#4f46e5;" onclick='confirmAndRecord(${a.id}, ${a.patient_id}, ${JSON.stringify(a.notes || "")})'>Confirm & Add Record</button>
+            </div>
+        ` : a.status === 'confirmed' ? `
+            <button class="btn btn-xs btn-primary" style="padding:2px 8px;font-size:0.75rem;" onclick="window.location.href='medical-records.html?mode=doctor&patient_id=${a.patient_id}&notes=${encodeURIComponent(a.notes || '')}'">Add Record</button>
+            <button class="btn btn-xs btn-outline-primary ms-1" style="padding:2px 8px;font-size:0.75rem;" onclick="startTelemedicine(${a.id})"><i class="fas fa-video"></i> Call</button>
+            <button class="btn btn-xs btn-danger ms-1" style="padding:2px 8px;font-size:0.75rem;" onclick="deleteAppt(${a.id})"><i class="fas fa-trash"></i></button>
+        ` : `
+            <span class="text-muted small">—</span>
+            <button class="btn btn-xs btn-outline-danger ms-2" style="padding:2px 6px;font-size:0.7rem;" onclick="deleteAppt(${a.id})"><i class="fas fa-trash"></i></button>
+        `}</td>
+      </tr>`;
+            }).join('') || '<tr><td colspan="5" class="text-center text-muted py-3">No appointments.</td></tr>';
+        }
+
+        async function startTelemedicine(appointmentId) {
+            const res = await apiFetch('/telemedicine/start', {
+                method: 'POST',
+                body: JSON.stringify({ appointment_id: appointmentId })
+            });
+            if (res?.ok) {
+                showToast('Video session started! Joining meeting...', 'success');
+                window.open(res.data.meeting_link, '_blank');
+            } else {
+                showToast('Failed to start telemedicine session.', 'error');
+            }
+        }
+
+        // ── Patients with Risk Scores ──────────────────────────────────
+        let allPatients = [];
+        async function loadPatients() {
+            const res = await apiFetch('/patient/all');
+            if (!res || !res.ok) return;
+            allPatients = res.data.patients;
+            document.getElementById('kpi-patients').textContent = allPatients.length;
+
+            // Load risk scores for each patient
+            const patientsWithRisk = await Promise.all(allPatients.slice(0, 6).map(async p => {
+                const riskRes = await apiFetch(`/risk/${p.patient_id}`);
+                return { ...p, risk: riskRes?.ok ? riskRes.data : { level: '--', score: 0 } };
+            }));
+
+            const listEl = document.getElementById('patients-list');
+            listEl.innerHTML = patientsWithRisk.map(p => {
+                const riskLevelClass = p.risk.level === 'High' ? 'risk-high' : p.risk.level === 'Medium' ? 'risk-medium' : 'risk-low';
+                return `<div class="patient-card d-flex align-items-center gap-3">
+        <div class="patient-av">${p.name.charAt(0)}</div>
+        <div class="flex-grow-1">
+          <div class="fw-600 small">${p.name}</div>
+          <div class="text-muted" style="font-size:0.76rem;">${p.gender || '--'} | Age: ${p.age || '--'} | <span class="text-danger">${p.blood_group || '--'}</span></div>
+          <div class="mt-1"><span class="risk-badge-sm ${riskLevelClass}">Risk: ${p.risk.level} (${p.risk.score})</span></div>
+        </div>
+        <div class="d-flex flex-column gap-1">
+          <a href="medical-records.html?mode=doctor&patient_id=${p.patient_id}" class="btn btn-vs-primary btn-sm" style="padding:4px 10px;font-size:0.7rem;">Add Record</a>
+          <a href="patient-list.html" class="btn btn-vs-outline btn-sm" style="padding:4px 10px;font-size:0.7rem;">View Profile</a>
+        </div>
+      </div>`;
+            }).join('') || '<p class="text-muted small text-center py-3">No patients found.</p>';
+        }
+
+        // ── Records ───────────────────────────────────────────────────
+        async function loadRecordsWritten() {
+            const res = await apiFetch('/records/my/all');
+            if (!res || !res.ok) return;
+            document.getElementById('stat-records').textContent = res.data.records.length;
+        }
+
+        // ── Abnormal Vitals ───────────────────────────────────────────
+        async function loadAbnormalVitals() {
+            if (allPatients.length === 0) return;
+            const abnormal = [];
+            for (const p of allPatients.slice(0, 10)) {
+                const res = await apiFetch(`/vitals/${p.patient_id}`);
+                if (!res?.ok || res.data.vitals.length === 0) continue;
+                const latest = res.data.vitals[0];
+                const issues = [];
+                if (latest.heart_rate < 50 || latest.heart_rate > 120) issues.push(`HR ${latest.heart_rate} bpm 🚨`);
+                else if (latest.heart_rate < 60 || latest.heart_rate > 100) issues.push(`HR ${latest.heart_rate} bpm⚠`);
+                if (latest.oxygen_level < 90) issues.push(`O₂ ${latest.oxygen_level}% 🚨`);
+                else if (latest.oxygen_level < 95) issues.push(`O₂ ${latest.oxygen_level}%⚠`);
+                if (latest.temperature > 39) issues.push(`Temp ${latest.temperature}°C 🚨`);
+                else if (latest.temperature > 37.2) issues.push(`Temp ${latest.temperature}°C⚠`);
+
+                // Get trend for this patient
+                const trendRes = await apiFetch(`/trends/${p.patient_id}`);
+                const trendWarnings = trendRes?.ok ? trendRes.data.warnings : [];
+
+                if (issues.length > 0) abnormal.push({ ...p, issues, latest, trendWarnings });
+            }
+            document.getElementById('stat-abnormal').textContent = abnormal.length;
+            if (abnormal.length > 0) {
+                document.getElementById('abnormal-section').style.display = '';
+                document.getElementById('abnormal-list').innerHTML = abnormal.map(p => `
+        <div class="alert-patient">
+          <div class="d-flex justify-content-between align-items-start gap-2 flex-wrap">
+            <div>
+              <strong>${p.name}</strong> <span class="badge bg-danger ms-2">${p.issues.join(' • ')}</span>
+              <div class="text-muted small mt-1">Last recorded: ${new Date(p.latest.record_date).toLocaleString('en-IN')}</div>
+              ${p.trendWarnings.filter(w => w.type !== 'ok').map(w => `<div class="text-warning small mt-1"><i class="fas fa-chart-line me-1"></i>${w.message}</div>`).join('')}
+            </div>
+            <div class="d-flex flex-column gap-1">
+              <a href="medical-records.html?mode=doctor&patient_id=${p.patient_id}" class="btn btn-vs-primary btn-sm" style="padding:4px 10px;font-size:0.7rem;">Add Record</a>
+              <a href="patient-list.html" class="btn btn-vs-outline btn-sm" style="padding:4px 10px;font-size:0.7rem;">View</a>
+              <button class="btn btn-outline-danger btn-sm mt-1" style="padding:4px 10px;font-size:0.7rem;" onclick="deleteVital(${p.latest.id})"><i class="fas fa-trash me-1"></i>Delete Vital</button>
+            </div>
+          </div>
+        </div>`).join('');
+            }
+        }
+
+        async function updateAppt(id, status) {
+            const res = await apiFetch(`/appointments/update/${id}`, { method: 'PUT', body: JSON.stringify({ status }) });
+            if (res?.ok) { showToast(`Appointment ${status} ✅`); refreshAll(); }
+            else showToast('Failed to update appointment.', 'error');
+        }
+
+        async function confirmAndRecord(id, patientId, notes) {
+            const res = await apiFetch(`/appointments/update/${id}`, { method: 'PUT', body: JSON.stringify({ status: 'confirmed' }) });
+            if (res?.ok) {
+                window.location.href = `medical-records.html?mode=doctor&patient_id=${patientId}&notes=${encodeURIComponent(notes || '')}`;
+            } else {
+                showToast('Failed to confirm appointment.', 'error');
+            }
+        }
+
+        async function deleteAppt(id) {
+            if (!confirm('Are you sure you want to permanently delete this appointment?')) return;
+            const res = await apiFetch(`/appointments/delete/${id}`, { method: 'DELETE' });
+            if (res?.ok) {
+                showToast('Appointment deleted successfully ✅');
+                refreshAll();
+            } else {
+                showToast('Failed to delete appointment', 'error');
+            }
+        }
+
+        async function deleteVital(id) {
+            if (!confirm('Are you sure you want to clear this vital record?')) return;
+            const res = await apiFetch(`/vitals/delete/${id}`, { method: 'DELETE' });
+            if (res?.ok) {
+                showToast('Vital record cleared ✅');
+                refreshAll(); // Reloads abnormal vitals
+            } else {
+                showToast('Failed to clear vital record', 'error');
+            }
+        }
+
+        // ── Bed Reservation Management ──────────────────────────────────
+        async function loadBeds() {
+            const tbody = document.getElementById('beds-list-body');
+            try {
+                const res = await apiFetch('/beds/allocations');
+                if (!res || !res.ok) {
+                    tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-3 px-3">Failed to load bed allocations.</td></tr>';
+                    return;
+                }
+                const beds = res.data.beds;
+                if (!beds || beds.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-4"><i class="fas fa-bed fa-2x mb-2 text-muted" style="opacity:0.3;"></i><br>No beds configured for this clinic.</td></tr>';
+                    return;
+                }
+                
+                tbody.innerHTML = beds.map(b => {
+                    const isOccupied = b.status === 'occupied' && b.allocation_id;
+                    const statusBadge = isOccupied ? '<span class="badge bg-danger">Occupied</span>' : '<span class="badge bg-success">Available</span>';
+                    const patientInfo = isOccupied ? `<div class="fw-bold">${b.patient_name}</div><div class="small text-muted">${b.patient_phone || ''}</div><div class="small text-primary">Admitted: ${new Date(b.admission_date).toLocaleString()}</div>` : '<em class="text-muted">Empty</em>';
+                    const actionBtn = isOccupied ? `<button class="btn btn-sm btn-outline-danger" onclick="dischargeBed(${b.allocation_id})">Discharge</button>` : '';
+
+                    return `
+                        <tr>
+                            <td><div class="fw-bold">${b.ward_type}</div><div class="small text-muted">${b.bed_number}</div></td>
+                            <td>${statusBadge}</td>
+                            <td>${patientInfo}</td>
+                            <td>${actionBtn}</td>
+                        </tr>
+                    `;
+                }).join('');
+            } catch (error) {
+                console.error('Error loading beds:', error);
+            }
+        }
+
+        async function dischargeBed(allocationId) {
+            if (!confirm('Are you sure you want to discharge this patient and release the bed?')) return;
+            const res = await apiFetch(`/beds/discharge/${allocationId}`, { method: 'POST' });
+            if (res && res.ok) {
+                showToast('🛏️ Bed released successfully!', 'success');
+                loadBeds();
+            } else {
+                showToast('Failed to discharge patient.', 'error');
+            }
+        }
+
+        // ── Blood Bank Management ──────────────────────────────────
+        async function loadBloodInventory() {
+            const tbody = document.getElementById('blood-list-body');
+            try {
+                const res = await apiFetch('/blood/inventory');
+                if (!res || !res.ok) {
+                    tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted py-3 px-3">Failed to load blood inventory.</td></tr>';
+                    return;
+                }
+                const inv = res.data.inventory;
+                if (!inv || inv.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted py-4"><i class="fas fa-tint fa-2x mb-2 text-muted" style="opacity:0.3;"></i><br>No blood inventory configured.</td></tr>';
+                    return;
+                }
+                
+                tbody.innerHTML = inv.map(b => {
+                    return `
+                        <tr>
+                            <td><div class="fw-bold text-danger" style="font-size:1.1rem">${b.blood_group}</div></td>
+                            <td>
+                                <input type="number" id="blood-qty-${b.inventory_id}" class="form-control form-control-sm text-center fw-bold" style="width:70px; display:inline-block;" value="${b.available_units}" min="0"> Units
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary" onclick="updateBlood(${b.inventory_id})">Update</button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            } catch (error) {
+                console.error('Error loading blood:', error);
+            }
+        }
+
+        async function updateBlood(inventoryId) {
+            const qtyInput = document.getElementById(`blood-qty-${inventoryId}`);
+            if(!qtyInput) return;
+            const newQty = parseInt(qtyInput.value, 10);
+            
+            const res = await apiFetch(`/blood/inventory`, { 
+                method: 'POST', 
+                body: JSON.stringify({ inventory_id: inventoryId, units: newQty }) 
+            });
+            
+            if (res && res.ok) {
+                showToast('🩸 Blood inventory updated!', 'success');
+            } else {
+                showToast('Failed to update inventory.', 'error');
+            }
+        }
+
+        // ── AI Risk Watchlist ─────────────────────────────────────
+        async function loadHighRiskPatients() {
+            const section = document.getElementById('risk-section');
+            const tbody = document.getElementById('risk-list-body');
+            try {
+                const res = await apiFetch('/analytics/risk/doctor');
+                if (res && res.ok && res.risks && res.risks.length > 0) {
+                    section.style.display = 'block';
+                    
+                    tbody.innerHTML = res.risks.sort((a,b) => b.score - a.score).map(r => `
+                        <tr>
+                            <td>
+                                <div class="fw-bold fs-5">${r.name}</div>
+                                <div class="small text-muted">ID: ${r.patient_id}</div>
+                            </td>
+                            <td class="w-50">
+                                <div class="progress" style="height:20px; border-radius:10px;">
+                                    <div class="progress-bar ${r.score > 75 ? 'bg-danger bg-gradient' : 'bg-warning bg-gradient'}" 
+                                         role="progressbar" style="width: ${r.score}%" 
+                                         aria-valuenow="${r.score}" aria-valuemin="0" aria-valuemax="100">
+                                        <span class="fw-bold">${r.score}% Risk Score</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="text-end">
+                                <span class="badge ${r.score > 75 ? 'bg-danger' : 'bg-warning'} px-3 py-2 border rounded-pill shadow-sm">
+                                    <i class="fas fa-exclamation-circle me-1"></i> ${r.level}
+                                </span>
+                            </td>
+                        </tr>
+                    `).join('');
+                } else {
+                    section.style.display = 'none';
+                }
+            } catch (err) {
+                console.error('Error loading AI risk:', err);
+            }
+        }
+
+        async function refreshAll() {
+            await Promise.all([loadStats(), loadAppointments(), loadPatients(), loadRecordsWritten()]);
+            await loadAbnormalVitals();
+            await loadHighRiskPatients();
+            await loadBeds();
+            await loadBloodInventory();
+            // Load notifications count (don't open panel on refresh)
+            const nRes = await apiFetch('/notifications/my');
+            if (nRes?.ok) {
+                const badge = document.getElementById('notif-unread-count');
+                if (badge) {
+                    badge.textContent = nRes.data.unread;
+                    // Keep badge inline-flex matching original or fallback to block
+                    badge.style.display = nRes.data.unread > 0 ? 'inline-block' : 'none';
+                }
+            }
+            setLastUpdated();
+            loadDoctorProfile();
+        }
+
+        refreshAll();
+        setInterval(refreshAll, 90000);
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Health Data – VitalSync</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+    <div class="dashboard-wrapper">
+        <aside class="sidebar">
+            <a href="patient-dashboard.html" class="sidebar-brand">💙 Vital<span>Sync</span></a>
+            <nav class="mt-2">
+                <a href="patient-dashboard.html" class="nav-link"><i class="fas fa-home"></i> Dashboard</a>
+                <a href="add-health-data.html" class="nav-link active"><i class="fas fa-heartbeat"></i> Add Vitals</a>
+                <a href="medical-records.html" class="nav-link"><i class="fas fa-file-medical"></i> Medical Records</a>
+                <a href="book-appointment.html" class="nav-link"><i class="fas fa-calendar-plus"></i> Book
+                    Appointment</a>
+                <a href="prescriptions.html" class="nav-link"><i class="fas fa-pills"></i> Prescriptions</a>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <div class="user-avatar" id="sidebar-avatar">P</div>
+                    <div>
+                        <div class="fw-600 text-white small" id="sidebar-user-name">Patient</div>
+                    </div>
+                </div>
+                <button class="btn btn-outline-danger btn-sm w-100 mt-1" onclick="logout()">
+                    <i class="fas fa-sign-out-alt me-1"></i> Logout
+                </button>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="page-header">
+                <h2><i class="fas fa-heartbeat text-danger me-2"></i>Add Vital Statistics</h2>
+                <p>Record your daily health measurements to track your wellness over time.</p>
+            </div>
+
+            <!-- Reference Ranges Card -->
+            <div class="row g-3 mb-4">
+                <div class="col-6 col-md-3">
+                    <div class="kpi-card">
+                        <div class="kpi-icon bg-heart"><i class="fas fa-heartbeat text-danger"></i></div>
+                        <div>
+                            <div class="kpi-val" style="font-size:1.1rem;">60–100</div>
+                            <div class="kpi-label">Normal Heart Rate (bpm)</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="kpi-card">
+                        <div class="kpi-icon bg-bp"><i class="fas fa-tachometer-alt text-primary"></i></div>
+                        <div>
+                            <div class="kpi-val" style="font-size:1.1rem;">120/80</div>
+                            <div class="kpi-label">Ideal Blood Pressure</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="kpi-card">
+                        <div class="kpi-icon bg-oxy"><i class="fas fa-lungs text-success"></i></div>
+                        <div>
+                            <div class="kpi-val" style="font-size:1.1rem;">&gt;95%</div>
+                            <div class="kpi-label">Normal Oxygen Level</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="kpi-card">
+                        <div class="kpi-icon bg-temp"><i class="fas fa-thermometer text-warning"></i></div>
+                        <div>
+                            <div class="kpi-val" style="font-size:1.1rem;">36.1–37.2</div>
+                            <div class="kpi-label">Normal Temperature (°C)</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                <div class="col-lg-8">
+                    <div class="vs-card">
+                        <div class="vs-card-header">
+                            <h5><i class="fas fa-plus-circle me-2 text-success"></i>Log Today's Vitals</h5>
+                        </div>
+                        <div id="alert-box" class="alert d-none mb-3"></div>
+                        <form id="vitals-form">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-500 small">Heart Rate (bpm) *</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i
+                                                class="fas fa-heartbeat text-danger"></i></span>
+                                        <input type="number" id="heart_rate" class="form-control" placeholder="72"
+                                            min="30" max="220" required>
+                                        <span class="input-group-text text-muted small">bpm</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-500 small">Blood Pressure</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i
+                                                class="fas fa-tachometer-alt text-primary"></i></span>
+                                        <input type="text" id="blood_pressure" class="form-control"
+                                            placeholder="120/80">
+                                        <span class="input-group-text text-muted small">mmHg</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-500 small">Oxygen Level (SpO₂) *</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fas fa-lungs text-success"></i></span>
+                                        <input type="number" id="oxygen_level" class="form-control" placeholder="98"
+                                            min="50" max="100" step="0.1" required>
+                                        <span class="input-group-text text-muted small">%</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-500 small">Body Temperature *</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i
+                                                class="fas fa-thermometer text-warning"></i></span>
+                                        <input type="number" id="temperature" class="form-control" placeholder="36.6"
+                                            step="0.1" min="30" max="45" required>
+                                        <span class="input-group-text text-muted small">°C</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-500 small">Blood Sugar Level <span
+                                            class="text-muted">(optional)</span></label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fas fa-tint text-danger"></i></span>
+                                        <input type="number" id="sugar_level" class="form-control" placeholder="100"
+                                            min="20" max="600" step="0.1">
+                                        <span class="input-group-text text-muted small">mg/dL</span>
+                                    </div>
+                                    <div class="text-muted" style="font-size:0.72rem;margin-top:3px;">Normal: 70–140
+                                        mg/dL | Critical: &gt;250 mg/dL</div>
+                                </div>
+                            </div>
+
+                            <!-- Live status indicators -->
+                            <div class="row g-2 mt-3" id="live-indicators">
+                                <div class="col-6 col-md-3">
+                                    <div class="p-2 rounded text-center small" id="ind-hr" style="background:#f3f4f6;">
+                                        Heart Rate<br><span>--</span></div>
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <div class="p-2 rounded text-center small" id="ind-oxy" style="background:#f3f4f6;">
+                                        Oxygen<br><span>--</span></div>
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <div class="p-2 rounded text-center small" id="ind-temp"
+                                        style="background:#f3f4f6;">Temperature<br><span>--</span></div>
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <div class="p-2 rounded text-center small" id="ind-sugar"
+                                        style="background:#f3f4f6;">
+                                        Sugar<br><span>--</span></div>
+                                </div>
+                            </div>
+
+                            <div class="mt-4 d-flex gap-2">
+                                <button type="submit" class="btn btn-vs-primary px-4" id="submit-btn">
+                                    <i class="fas fa-save me-2"></i>Save Vitals
+                                    <span id="btn-spinner" class="spinner-border spinner-border-sm ms-2 d-none"></span>
+                                </button>
+                                <button type="reset" class="btn btn-vs-outline px-4"
+                                    onclick="resetIndicators()">Clear</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="col-lg-4">
+                    <div class="vs-card">
+                        <div class="vs-card-header">
+                            <h5><i class="fas fa-history me-2 text-primary"></i>Recent Records</h5>
+                        </div>
+                        <div id="recent-vitals">
+                            <div class="spinner-vs">
+                                <div class="spinner-border text-primary spinner-border-sm"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="toast-container"></div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/auth.js"></script>
+    <script>
+        requireAuth(['patient']);
+        populateSidebarUser();
+
+        function setIndicator(id, val, isGood) {
+            const el = document.getElementById(id);
+            el.style.background = isGood ? '#d1fae5' : '#fee2e2';
+            el.style.color = isGood ? '#065f46' : '#7f1d1d';
+            el.querySelector('span').textContent = val;
+        }
+        function resetIndicators() {
+            ['ind-hr', 'ind-oxy', 'ind-temp', 'ind-sugar'].forEach(id => {
+                const el = document.getElementById(id);
+                el.style.background = '#f3f4f6'; el.style.color = '#374151';
+                el.querySelector('span').textContent = '--';
+            });
+        }
+
+        // Live indicator update on input
+        document.getElementById('heart_rate').addEventListener('input', e => {
+            const v = parseFloat(e.target.value);
+            setIndicator('ind-hr', `${v} bpm`, v >= 60 && v <= 100);
+        });
+        document.getElementById('oxygen_level').addEventListener('input', e => {
+            const v = parseFloat(e.target.value);
+            setIndicator('ind-oxy', `${v}%`, v >= 95);
+        });
+        document.getElementById('temperature').addEventListener('input', e => {
+            const v = parseFloat(e.target.value);
+            setIndicator('ind-temp', `${v}°C`, v >= 36.1 && v <= 37.2);
+        });
+        // Blood pressure field – no live indicator tile for BP (only HR, O2, Temp, Sugar)
+
+        document.getElementById('sugar_level').addEventListener('input', e => {
+            const v = parseFloat(e.target.value);
+            setIndicator('ind-sugar', `${v} mg/dL`, v >= 70 && v <= 140);
+        });
+
+        document.getElementById('vitals-form').addEventListener('submit', async e => {
+            e.preventDefault();
+            const sugarVal = document.getElementById('sugar_level').value;
+            const body = {
+                heart_rate: parseFloat(document.getElementById('heart_rate').value),
+                blood_pressure: document.getElementById('blood_pressure').value.trim(),
+                oxygen_level: parseFloat(document.getElementById('oxygen_level').value),
+                temperature: parseFloat(document.getElementById('temperature').value),
+                sugar_level: sugarVal ? parseFloat(sugarVal) : null,
+            };
+            document.getElementById('btn-spinner').classList.remove('d-none');
+            const res = await apiFetch('/vitals/add', { method: 'POST', body: JSON.stringify(body) });
+            document.getElementById('btn-spinner').classList.add('d-none');
+            if (res?.ok) {
+                showToast('Vitals saved successfully! ✅');
+                if (res.data.alerts) res.data.alerts.forEach(a => showToast(a, 'warning'));
+                if (res.data.critical) {
+                    res.data.critical.forEach(c => showToast(`🚨 CRITICAL: ${c.message}`, 'error'));
+                }
+                e.target.reset(); resetIndicators(); loadRecent();
+            } else {
+                showToast(res?.data?.message || 'Failed to save vitals.', 'error');
+            }
+        });
+
+        async function loadRecent() {
+            const res = await apiFetch('/vitals/my/all');
+            const el = document.getElementById('recent-vitals');
+            if (!res || !res.ok || res.data.vitals.length === 0) {
+                el.innerHTML = '<p class="text-muted small text-center py-2">No records yet.</p>'; return;
+            }
+            el.innerHTML = res.data.vitals.slice(0, 6).map(v => `
+      <div class="py-2 border-bottom">
+        <div class="d-flex justify-content-between">
+          <small class="text-muted">${new Date(v.record_date).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })}</small>
+          <small class="text-muted">${new Date(v.record_date).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</small>
+        </div>
+        <div class="d-flex gap-2 flex-wrap mt-1">
+          <span class="badge bg-danger bg-opacity-10 text-danger">❤️ ${v.heart_rate} bpm</span>
+          <span class="badge bg-success bg-opacity-10 text-success">O₂ ${v.oxygen_level}%</span>
+          <span class="badge bg-warning bg-opacity-10 text-warning">🌡️ ${v.temperature}°C</span>
+        </div>
+      </div>`).join('');
+        }
+        loadRecent();
+    </script>
+</body>
+
+</html>

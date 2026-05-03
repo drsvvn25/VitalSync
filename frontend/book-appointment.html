@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Appointment – VitalSync</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css" />
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        /* AI Triage Visual */
+        .triage-card {
+            border-radius: 14px;
+            padding: 20px 24px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+            animation: slideIn 0.4s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .triage-card.emergency {
+            background: linear-gradient(135deg, #7f1d1d, #ef4444);
+            color: #fff;
+        }
+
+        .triage-card.routine {
+            background: linear-gradient(135deg, #14532d, #22c55e);
+            color: #fff;
+        }
+
+        .triage-icon {
+            font-size: 2.5rem;
+            line-height: 1;
+        }
+
+        /* Queue Token Card */
+        .queue-token-card {
+            background: linear-gradient(135deg, #1e1b4b, #4338ca);
+            color: #fff;
+            border-radius: 16px;
+            padding: 20px 24px;
+            text-align: center;
+            margin-bottom: 20px;
+            animation: slideIn 0.4s ease;
+        }
+
+        .queue-token-card .token-number {
+            font-size: 2.2rem;
+            font-weight: 800;
+            letter-spacing: 3px;
+            font-family: 'Courier New', monospace;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 8px;
+            padding: 8px 20px;
+            display: inline-block;
+            margin: 10px 0;
+        }
+
+        .queue-token-card .position {
+            font-size: 1rem;
+            opacity: 0.85;
+        }
+
+        /* Email Preview Card */
+        .email-preview-card {
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 16px;
+        }
+
+        .email-preview-card .email-header {
+            background: #0d6efd;
+            color: #fff;
+            padding: 10px 16px;
+            font-size: 0.85rem;
+        }
+
+        .email-preview-card .email-body {
+            padding: 14px 16px;
+            font-size: 0.82rem;
+            font-family: monospace;
+            white-space: pre-line;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        /* Keywords hint */
+        .symptom-hint {
+            font-size: 0.72rem;
+            color: #64748b;
+            margin-top: 4px;
+        }
+
+        .symptom-hint .kw {
+            display: inline-block;
+            background: #fee2e2;
+            color: #7f1d1d;
+            border-radius: 4px;
+            padding: 1px 6px;
+            margin: 2px;
+            font-size: 0.68rem;
+        }
+
+        /* ─── Map Enhancements ─────────────────────────────── */
+        .map-filter-bar {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            padding: 10px 16px;
+            background: #f8faff;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .map-filter-bar .filter-btn {
+            border: none;
+            border-radius: 20px;
+            padding: 5px 14px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            opacity: 0.65;
+        }
+
+        .map-filter-bar .filter-btn.active  { opacity: 1; transform: scale(1.04); }
+        .filter-btn.f-all      { background:#e8f4fd; color:#1d4ed8; }
+        .filter-btn.f-hospital { background:#fee2e2; color:#dc2626; }
+        .filter-btn.f-clinic   { background:#dbeafe; color:#1d4ed8; }
+        .filter-btn.f-pharmacy { background:#d1fae5; color:#059669; }
+
+        .map-legend {
+            display: flex;
+            gap: 14px;
+            align-items: center;
+            flex-wrap: wrap;
+            font-size: 0.75rem;
+            color: #475569;
+        }
+
+        .map-legend span { display:flex; align-items:center; gap:5px; }
+        .legend-dot {
+            width: 12px; height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        /* Facility List Sidebar */
+        #facility-list {
+            max-height: 340px;
+            overflow-y: auto;
+            padding: 6px 0;
+        }
+
+        .facility-item {
+            padding: 10px 14px;
+            border-bottom: 1px solid #f1f5f9;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+
+        .facility-item:hover { background: #f0f7ff; }
+
+        .facility-item:last-child { border-bottom: none; }
+
+        .facility-tag {
+            display: inline-block;
+            font-size: 0.65rem;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 10px;
+            margin-left: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+        }
+
+        .tag-hospital { background:#fee2e2; color:#dc2626; }
+        .tag-clinic   { background:#dbeafe; color:#1d4ed8; }
+        .tag-pharmacy { background:#d1fae5; color:#059669; }
+    </style>
+</head>
+
+<body>
+    <div class="dashboard-wrapper">
+        <aside class="sidebar">
+            <a href="patient-dashboard.html" class="sidebar-brand">💙 Vital<span>Sync</span></a>
+            <nav class="mt-2">
+                <a href="patient-dashboard.html" class="nav-link"><i class="fas fa-home"></i> Dashboard</a>
+                <a href="add-health-data.html" class="nav-link"><i class="fas fa-heartbeat"></i> Add Vitals</a>
+                <a href="medical-records.html" class="nav-link"><i class="fas fa-file-medical"></i> Medical Records</a>
+                <a href="book-appointment.html" class="nav-link active"><i class="fas fa-calendar-plus"></i> Book
+                    Appointment</a>
+                <a href="prescriptions.html" class="nav-link"><i class="fas fa-pills"></i> Prescriptions</a>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <div class="user-avatar" id="sidebar-avatar">P</div>
+                    <div>
+                        <div class="fw-600 text-white small" id="sidebar-user-name">Patient</div>
+                    </div>
+                </div>
+                <button class="btn btn-outline-danger btn-sm w-100 mt-1" onclick="logout()">
+                    <i class="fas fa-sign-out-alt me-1"></i> Logout
+                </button>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="page-header">
+                <h2><i class="fas fa-calendar-plus text-primary me-2"></i>Book Appointment</h2>
+                <p>Schedule a consultation. Our AI Triage System will assess urgency and assign your queue position.</p>
+            </div>
+
+            <!-- How It Works Info Bar -->
+            <div class="row g-3 mb-4">
+                <div class="col-6 col-md-3">
+                    <div class="kpi-card" style="padding:14px;">
+                        <div class="kpi-icon bg-bp" style="width:36px;height:36px;"><i
+                                class="fas fa-stethoscope text-primary" style="font-size:0.9rem;"></i></div>
+                        <div>
+                            <div class="kpi-label fw-600" style="font-size:0.78rem;">Step 1</div>
+                            <div class="text-muted" style="font-size:0.72rem;">Book with symptoms</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="kpi-card" style="padding:14px;">
+                        <div class="kpi-icon bg-heart" style="width:36px;height:36px;"><i
+                                class="fas fa-brain text-danger" style="font-size:0.9rem;"></i></div>
+                        <div>
+                            <div class="kpi-label fw-600" style="font-size:0.78rem;">Step 2</div>
+                            <div class="text-muted" style="font-size:0.72rem;">AI Triage analysis</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="kpi-card" style="padding:14px;">
+                        <div class="kpi-icon bg-oxy" style="width:36px;height:36px;"><i
+                                class="fas fa-ticket-alt text-success" style="font-size:0.9rem;"></i></div>
+                        <div>
+                            <div class="kpi-label fw-600" style="font-size:0.78rem;">Step 3</div>
+                            <div class="text-muted" style="font-size:0.72rem;">Get queue token</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="kpi-card" style="padding:14px;">
+                        <div class="kpi-icon bg-temp" style="width:36px;height:36px;"><i
+                                class="fas fa-envelope text-warning" style="font-size:0.9rem;"></i></div>
+                        <div>
+                            <div class="kpi-label fw-600" style="font-size:0.78rem;">Step 4</div>
+                            <div class="text-muted" style="font-size:0.72rem;">Email confirmation</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Map Container -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="vs-card" style="overflow:hidden;">
+                        <!-- Card Header -->
+                        <div class="vs-card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+                            <div>
+                                <h5 style="margin:0;"><i class="fas fa-map-marker-alt text-danger me-2"></i>Nearby Medical Facilities – Anand, Gujarat</h5>
+                                <div id="map-count-label" style="font-size:0.75rem;color:#64748b;margin-top:2px;">Loading facilities…</div>
+                            </div>
+                            <div class="d-flex align-items-center gap-3 flex-wrap">
+                                <button class="locate-btn" onclick="locateUser()">
+                                    <i class="fas fa-location-arrow me-1"></i>Locate Me
+                                </button>
+                                <div class="map-legend">
+                                    <span><span class="legend-dot" style="background:#dc2626;"></span>Hospital</span>
+                                    <span><span class="legend-dot" style="background:#2563eb;"></span>Clinic</span>
+                                    <span><span class="legend-dot" style="background:#059669;"></span>Pharmacy</span>
+                                </div>
+                                <button id="btn-reset-filter" class="btn btn-sm btn-outline-secondary d-none" onclick="resetDoctorFilter()">Show All Doctors</button>
+                            </div>
+                        </div>
+                        <!-- Filter bar -->
+                        <div class="map-filter-bar">
+                            <button class="filter-btn f-all active"  onclick="filterMap('all')">🏥 All Facilities</button>
+                            <button class="filter-btn f-hospital"     onclick="filterMap('hospital')">🏨 Hospitals</button>
+                            <button class="filter-btn f-clinic"       onclick="filterMap('clinic')">🩺 Clinics</button>
+                            <button class="filter-btn f-pharmacy"     onclick="filterMap('pharmacy')">💊 Pharmacies</button>
+                        </div>
+                        <!-- Map + List side by side -->
+                        <div class="d-flex position-relative" style="min-height:360px;">
+                            <div id="clinic-map" style="flex:1;min-height:360px;z-index:1;"></div>
+                            <div id="routing-panel" class="routing-info-panel">
+                                <div class="fw-700 text-primary">Route Found</div>
+                                <div id="route-details" class="text-muted small"></div>
+                                <button class="btn btn-sm btn-link p-0 text-danger mt-1" style="font-size:0.7rem;" onclick="clearRoute()">Clear Route</button>
+                            </div>
+                            <!-- Facility list panel -->
+                            <div style="width:280px;border-left:1px solid #e2e8f0;background:#fafbff;" class="d-none d-lg-block">
+                                <div style="padding:10px 14px;font-size:0.78rem;font-weight:700;color:#334155;border-bottom:1px solid #e2e8f0;background:#f1f5f9;">
+                                    📋 Facility List <span id="facility-list-count" style="font-weight:400;color:#64748b;"></span>
+                                </div>
+                                <div id="facility-list"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                <!-- Booking Form -->
+                <div class="col-lg-7">
+                    <div class="vs-card">
+                        <div class="vs-card-header">
+                            <h5><i class="fas fa-plus me-2 text-success"></i>New Appointment</h5>
+                        </div>
+                        <div id="alert-box" class="alert d-none mb-3"></div>
+
+                        <!-- AI Triage Result (shown after booking) -->
+                        <div id="triage-result-container" style="display:none;"></div>
+
+                        <!-- Queue Token (shown after booking) -->
+                        <div id="queue-token-container" style="display:none;"></div>
+
+                        <!-- Email Preview (shown after booking) -->
+                        <div id="email-preview-container" style="display:none;"></div>
+
+                        <form id="appt-form">
+                            <div class="mb-3">
+                                <label class="form-label fw-500 small">Select Doctor *</label>
+                                <div class="input-group">
+                                    <select id="doctor_id" class="vs-form-control" required>
+                                        <option value="">— Loading doctors… —</option>
+                                    </select>
+                                    <button class="btn btn-outline-primary btn-sm" type="button" onclick="loadDoctors()" title="Refresh List">
+                                        <i class="fas fa-sync-alt"></i>
+                                    </button>
+                                </div>
+                                <div id="no-doctors-alert" class="alert alert-warning d-none mt-2 p-2 small">
+                                    <i class="fas fa-exclamation-triangle me-1"></i> No doctors available. Please contact admin.
+                                </div>
+                            </div>
+
+                            <div id="doctor-info" class="d-none mb-3 p-3"
+                                style="background:#eff6ff;border-radius:8px;border:1px solid #bfdbfe;">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#0d6efd,#6c63ff);display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.2rem;font-weight:700;"
+                                        id="doc-avatar">D</div>
+                                    <div>
+                                        <div class="fw-600" id="doc-name"></div>
+                                        <div class="text-muted small" id="doc-spec"></div>
+                                        <div class="text-muted small mt-1"><i class="fas fa-hospital text-primary me-1"></i><span id="doc-clinic"></span></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-500 small">Appointment Date & Time *</label>
+                                    <input type="datetime-local" id="appointment_date" class="vs-form-control" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-500 small">Reason for Visit</label>
+                                    <input type="text" id="notes" class="vs-form-control"
+                                        placeholder="e.g. Annual check-up">
+                                </div>
+                            </div>
+
+                            <!-- Symptoms field — used for AI Triage -->
+                            <div class="mt-3">
+                                <label class="form-label fw-500 small">
+                                    <i class="fas fa-brain me-1 text-danger"></i>
+                                    Describe Your Symptoms <span class="text-muted">(used for AI Triage)</span>
+                                </label>
+                                <textarea id="symptoms" class="vs-form-control" rows="3"
+                                    placeholder="Describe your symptoms in detail, e.g. 'severe chest pain, difficulty breathing' or 'routine check-up, mild headache'..."></textarea>
+                                <div class="symptom-hint">
+                                    Emergency keywords:
+                                    <span class="kw">chest pain</span>
+                                    <span class="kw">severe</span>
+                                    <span class="kw">difficulty breathing</span>
+                                    <span class="kw">unconscious</span>
+                                    <span class="kw">bleeding</span>
+                                    <span class="kw">seizure</span>
+                                    → triggers <strong>High Priority</strong>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn btn-vs-primary mt-4 px-4">
+                                <i class="fas fa-calendar-check me-2"></i>Book Appointment + AI Triage
+                                <span id="btn-spinner" class="spinner-border spinner-border-sm ms-2 d-none"></span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- My Appointments Panel -->
+                <div class="col-lg-5">
+                    <div class="vs-card h-100">
+                        <div class="vs-card-header">
+                            <h5><i class="fas fa-list me-2 text-primary"></i>My Appointments</h5>
+                        </div>
+                        <div id="my-appointments">
+                            <div class="spinner-vs">
+                                <div class="spinner-border text-primary spinner-border-sm"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="toast-container"></div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
+    <script src="js/auth.js"></script>
+    <script>
+        requireAuth(['patient']);
+        populateSidebarUser();
+
+        // Set min date to tomorrow
+        const minDate = new Date();
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        document.getElementById('appointment_date').min = tomorrow.toISOString().slice(0, 16);
+
+        let doctors = [];
+        let map;
+        let allMarkers = []; // { marker, type, clinic, distance }
+        let currentFilter = 'all';
+        let userLocation = null;
+        let userMarker = null;
+        let routingControl = null;
+
+        // ── Accurate clinic data — GPS verified ──
+        const FALLBACK_CLINICS = [
+            { clinic_id: 901, name: 'Anand General Hospital',            address: 'Town Hall Road, Anand, Gujarat 388001',              latitude: 22.5629, longitude: 72.9282, contact: '02692-242200', type: 'hospital' },
+            { clinic_id: 902, name: 'Zydus Hospital Anand',              address: 'NH-8, Anand-Vidyanagar Road, Anand 388120',          latitude: 22.5472, longitude: 72.9507, contact: '02692-660000', type: 'hospital' },
+            { clinic_id: 903, name: 'Shree Krishna Hospital',            address: 'Karamsad Road, Anand, Gujarat 388001',               latitude: 22.5598, longitude: 72.9352, contact: '02692-244500', type: 'hospital' },
+            { clinic_id: 904, name: 'Pramukh Swami Medical College',     address: 'Karamsad, Anand, Gujarat 388325',                    latitude: 22.5339, longitude: 72.9057, contact: '02692-229323', type: 'hospital' },
+            { clinic_id: 905, name: 'Suryapur Maternity & Surgical',     address: 'GIDC, Vitthal Udyognagar, Gujarat 388121',           latitude: 22.5536, longitude: 72.9591, contact: '02692-236100', type: 'hospital' },
+            { clinic_id: 906, name: 'Sai Eye Care Clinic',               address: 'Anand-Sojitra Road, Near Bus Stand, Anand 388001',  latitude: 22.5609, longitude: 72.9241, contact: '02692-241100', type: 'clinic'   },
+            { clinic_id: 907, name: 'Dr. Shah Dental Clinic',            address: 'Near Clock Tower, Station Road, Anand 388001',      latitude: 22.5614, longitude: 72.9268, contact: '98250-11111',  type: 'clinic'   },
+            { clinic_id: 908, name: 'Sanjivani Polyclinic',              address: 'Near Railway Station, Anand, Gujarat 388001',        latitude: 22.5636, longitude: 72.9310, contact: '02692-255200', type: 'clinic'   },
+            { clinic_id: 909, name: 'Navjivan Child & Maternity Clinic', address: 'Vallabh Vidyanagar, Anand, Gujarat 388120',          latitude: 22.5425, longitude: 72.9238, contact: '02692-232000', type: 'clinic'   },
+            { clinic_id: 910, name: 'Anand Orthopaedic Centre',          address: 'Triveni Road, Anand, Gujarat 388001',                latitude: 22.5651, longitude: 72.9333, contact: '02692-248000', type: 'clinic'   },
+            { clinic_id: 911, name: 'Apollo Pharmacy - Anand',           address: 'MG Road, Near Town Hall, Anand 388001',              latitude: 22.5622, longitude: 72.9298, contact: '1800-180-1061', type: 'pharmacy' },
+            { clinic_id: 912, name: 'MedPlus - Vallabh Vidyanagar',      address: 'VV Nagar Main Road, Vallabh Vidyanagar 388120',      latitude: 22.5438, longitude: 72.9230, contact: '040-67006700',  type: 'pharmacy' },
+            { clinic_id: 913, name: 'Wellness Forever Pharmacy',         address: 'Karamsad Chokdi, Anand-Karamsad Road 388325',        latitude: 22.5473, longitude: 72.9219, contact: '02692-260000',  type: 'pharmacy' },
+        ];
+
+        // Returns distance in km between two lat/lng points (Haversine formula)
+        function getDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371; // Radius of the earth in km
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c; // Distance in km
+        }
+
+        function getMarkerIcon(type) {
+            const cfg = {
+                hospital: { color: '#dc2626', emoji: '🏥' },
+                clinic:   { color: '#2563eb', emoji: '🩺' },
+                pharmacy: { color: '#059669', emoji: '💊' },
+            };
+            const { color, emoji } = cfg[type] || { color: '#6b7280', emoji: '📍' };
+            return L.divIcon({
+                className: '',
+                html: `<div style="width:30px;height:30px;border-radius:50%;background:${color};border:3px solid #fff;
+                              box-shadow:0 2px 8px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;font-size:14px;">
+                          ${emoji}
+                        </div>`,
+                iconSize: [30, 30],
+                iconAnchor: [15, 15],
+                popupAnchor: [0, -18],
+            });
+        }
+
+        function buildMarkerPopup(c) {
+            const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${c.latitude},${c.longitude}`;
+            const viewBtn = `<button class="btn btn-sm btn-primary w-100 mt-2"
+                       onclick="filterDoctorsByClinic(${c.clinic_id}, '${c.name.replace(/'/g, "\\'")}')">
+                       <i class="fas fa-user-md me-1"></i>View Doctors Here
+                   </button>`;
+            
+            const routeBtn = `<button class="btn btn-sm btn-outline-primary w-100 mt-1" onclick="showRoute(${c.latitude}, ${c.longitude}, '${c.name.replace(/'/g, "\\'")}')">
+                                <i class="fas fa-route me-1"></i>Get Path
+                              </button>`;
+
+            const typeLabel = { hospital: '🏨 Hospital', clinic: '🩺 Clinic', pharmacy: '💊 Pharmacy' }[c.type] || 'Facility';
+            return `<div style="min-width:200px;padding:4px 2px;">
+                        <div style="font-weight:700;font-size:0.95rem;color:#1e3a8a;margin-bottom:3px;">${c.name}</div>
+                        <div style="font-size:0.72rem;color:#64748b;margin-bottom:5px;">${typeLabel}</div>
+                        <div style="font-size:0.8rem;color:#475569;margin-bottom:4px;">
+                            <i class="fas fa-map-marker-alt" style="color:#dc2626;margin-right:4px;"></i>${c.address}
+                        </div>
+                        ${c.contact ? `<div style="font-size:0.8rem;margin-bottom:5px;">
+                            <i class="fas fa-phone" style="color:#16a34a;margin-right:4px;"></i>${c.contact}
+                        </div>` : ''}
+                        <a href="${mapsUrl}" target="_blank" rel="noopener"
+                           style="font-size:0.75rem;color:#0d6efd;display:inline-block;margin-bottom:6px;">
+                            <i class="fas fa-external-link-alt me-1"></i>Open in Google Maps
+                        </a>
+                        ${viewBtn}
+                        ${routeBtn}
+                    </div>`;
+        }
+
+        function addMarkersForClinics(clinics) {
+            allMarkers.forEach(m => map.removeLayer(m.marker));
+            allMarkers = [];
+            clinics.forEach(c => {
+                if (!c.latitude || !c.longitude) return;
+                const marker = L.marker([c.latitude, c.longitude], {
+                    icon: getMarkerIcon(c.type || 'clinic')
+                }).addTo(map);
+                marker.bindPopup(buildMarkerPopup(c), { maxWidth: 250 });
+                
+                let distNum = null;
+                if (userLocation) {
+                    distNum = getDistance(userLocation.lat, userLocation.lng, c.latitude, c.longitude);
+                }
+
+                allMarkers.push({ marker, type: c.type || 'clinic', clinic: c, distance: distNum });
+            });
+        }
+
+        function renderFacilityList(filter) {
+            const list = document.getElementById('facility-list');
+            const countEl = document.getElementById('facility-list-count');
+            if (!list) return;
+
+            const visible = filter === 'all' ? allMarkers : allMarkers.filter(m => m.type === filter);
+            if (userLocation) {
+                visible.sort((a, b) => (a.distance || 9999) - (b.distance || 9999));
+            }
+
+            countEl.textContent = `(${visible.length})`;
+            list.innerHTML = visible.map(({ type, clinic, distance }) => {
+                const tagClass = `tag-${type}`;
+                const tagLabel = { hospital: 'Hospital', clinic: 'Clinic', pharmacy: 'Pharmacy' }[type] || type;
+                let distText = distance ? `<span class="distance-badge"><i class="fas fa-location-arrow"></i> ${distance.toFixed(2)} km</span>` : '';
+                
+                return `<div class="facility-item" onclick="focusMarkerByClinicId(${clinic.clinic_id})">
+                            <div class="d-flex align-items-start">
+                                <div style="flex:1;font-size:0.84rem;font-weight:600;color:#1e293b;">${clinic.name}</div>
+                                <span class="facility-tag ${tagClass}">${tagLabel}</span>
+                            </div>
+                            <div style="font-size:0.72rem;color:#64748b;margin-top:2px;">${clinic.address || ''}</div>
+                            <div class="d-flex justify-content-between align-items-center mt-1">
+                                ${distText}
+                                ${clinic.contact ? `<div style="font-size:0.72rem;color:#16a34a;"><i class="fas fa-phone" style="font-size:0.64rem;margin-right:3px;"></i>${clinic.contact}</div>` : '<div></div>'}
+                            </div>
+                        </div>`;
+            }).join('');
+        }
+
+        window.focusMarkerByClinicId = function(clinicId) {
+            const m = allMarkers.find(x => x.clinic.clinic_id === clinicId);
+            if (!m) return;
+            map.setView([m.clinic.latitude, m.clinic.longitude], 16, { animate: true });
+            m.marker.openPopup();
+        };
+
+        window.locateUser = function() {
+            if (!navigator.geolocation) {
+                showToast("Geolocation not supported", "warning");
+                return;
+            }
+            
+            showToast("Searching location...", "info");
+            navigator.geolocation.getCurrentPosition((pos) => {
+                userLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                
+                if (userMarker) map.removeLayer(userMarker);
+                
+                const userIcon = L.divIcon({
+                    className: 'user-icon',
+                    html: `<div style="width:20px;height:20px;background:#0d6efd;border:3px solid #fff;border-radius:50%;box-shadow:0 0 10px rgba(13,110,253,0.6);"></div>`,
+                    iconSize: [20, 20]
+                });
+                
+                userMarker = L.marker([userLocation.lat, userLocation.lng], {icon: userIcon}).addTo(map);
+                userMarker.bindPopup("<b>You are here</b>").openPopup();
+                map.setView([userLocation.lat, userLocation.lng], 14);
+                
+                allMarkers.forEach(m => {
+                    m.distance = getDistance(userLocation.lat, userLocation.lng, m.clinic.latitude, m.clinic.longitude);
+                });
+                
+                filterMap(currentFilter);
+                showToast("Location found!", "success");
+            }, () => {
+                showToast("Location denied or unavailable", "error");
+            });
+        };
+
+        window.showRoute = function(destLat, destLng, name) {
+            if (!userLocation) {
+                showToast("Please 'Locate Me' first", "warning");
+                return;
+            }
+            
+            clearRoute();
+            routingControl = L.Routing.control({
+                waypoints: [L.latLng(userLocation.lat, userLocation.lng), L.latLng(destLat, destLng)],
+                routeWhileDragging: false,
+                lineOptions: { styles: [{ color: '#0d6efd', opacity: 0.8, weight: 6 }] },
+                addWaypoints: false,
+                draggableWaypoints: false,
+                createMarker: function() { return null; }
+            }).addTo(map);
+            
+            routingControl.on('routesfound', function(e) {
+                const summary = e.routes[0].summary;
+                const dist = (summary.totalDistance / 1000).toFixed(2);
+                const time = Math.round(summary.totalTime / 60);
+                
+                document.getElementById('routing-panel').style.display = 'block';
+                document.getElementById('route-details').innerHTML = `To: <b>${name}</b><br>${dist} km · ${time} mins`;
+            });
+        };
+
+        window.clearRoute = function() {
+            if (routingControl) { map.removeControl(routingControl); routingControl = null; }
+            document.getElementById('routing-panel').style.display = 'none';
+        };
+
+        window.filterMap = function(type) {
+            currentFilter = type;
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            const btn = document.querySelector(`.filter-btn.f-${type}`);
+            if (btn) btn.classList.add('active');
+            
+            allMarkers.forEach(({ marker, type: t }) => {
+                const show = type === 'all' || t === type;
+                if (show && !map.hasLayer(marker)) map.addLayer(marker);
+                if (!show && map.hasLayer(marker)) map.removeLayer(marker);
+            });
+            
+            const cnt = type === 'all' ? allMarkers.length : allMarkers.filter(m => m.type === type).length;
+            document.getElementById('map-count-label').textContent = `Showing ${cnt} facilit${cnt === 1 ? 'y' : 'ies'}`;
+            renderFacilityList(type);
+        };
+
+        async function initMap() {
+            map = L.map('clinic-map').setView([22.5600, 72.9400], 13);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+            let backendClinics = [];
+            try {
+                const res = await apiFetch('/clinics');
+                if (res && res.ok) backendClinics = res.data.clinics || [];
+            } catch (e) {}
+
+            // De-duplicate backend clinics by name to handle DB duplicates
+            const uniqueBackend = [];
+            const seenNames = new Set();
+            backendClinics.forEach(c => {
+                const name = c.name.trim().toLowerCase();
+                if (!seenNames.has(name)) {
+                    seenNames.add(name);
+                    uniqueBackend.push(c);
+                }
+            });
+
+            const merged = [
+                ...uniqueBackend,
+                ...FALLBACK_CLINICS.filter(f => !seenNames.has(f.name.trim().toLowerCase()))
+            ];
+
+            addMarkersForClinics(merged);
+            document.getElementById('map-count-label').textContent = `Showing ${allMarkers.length} facilities`;
+            renderFacilityList('all');
+        }
+
+        window.filterDoctorsByClinic = function(clinicId, clinicName) {
+            // 1. Try matching by ID first
+            let filtered = doctors.filter(d => d.clinic_id == clinicId);
+            
+            // 2. Fallback to matching by name if ID fails (handles database duplicates & fallbacks)
+            if (filtered.length === 0 && clinicName) {
+                console.log(`No doctors found for clinic ID ${clinicId}. Trying fallback to name: ${clinicName}`);
+                filtered = doctors.filter(d => 
+                    d.clinic_name && d.clinic_name.trim().toLowerCase() === clinicName.trim().toLowerCase()
+                );
+            }
+
+            renderDoctorDropdown(filtered, filtered.length > 0 ? `— Doctors at ${clinicName} —` : `— No doctors found at ${clinicName} —`);
+            document.getElementById('btn-reset-filter').classList.remove('d-none');
+            
+            if (filtered.length > 0) {
+                showToast(`Found ${filtered.length} doctor(s) at ${clinicName}`, 'success');
+            } else {
+                showToast(`No doctors found for ${clinicName}`, 'warning');
+            }
+
+            map.closePopup();
+            document.getElementById('doctor-info').classList.add('d-none');
+            document.getElementById('appt-form').scrollIntoView({behavior: 'smooth', block: 'center'});
+        };
+
+        window.resetDoctorFilter = function() {
+            renderDoctorDropdown(doctors, '— Select a Doctor —');
+            document.getElementById('btn-reset-filter').classList.add('d-none');
+            document.getElementById('doctor-info').classList.add('d-none');
+        };
+
+        function renderDoctorDropdown(docs, placeholder) {
+            console.log('Rendering doctor dropdown with', docs.length, 'doctors');
+            const sel = document.getElementById('doctor_id');
+            if (!sel) return;
+            
+            let html = `<option value="">${placeholder}</option>`;
+            if (docs && docs.length > 0) {
+                html += docs.map(d => `<option value="${d.doctor_id}">Dr. ${d.name} – ${d.specialization}</option>`).join('');
+            } else if (doctors.length > 0) {
+                html += '<option value="" disabled>— No matching doctors found —</option>';
+            } else {
+                html += '<option value="" disabled>— No doctors available —</option>';
+            }
+            sel.innerHTML = html;
+        }
+
+        async function loadDoctors() {
+            try {
+                console.log('Fetching doctors from /api/doctor/all...');
+                const res = await apiFetch('/doctor/all');
+                console.log('Doctors API response:', res);
+                
+                if (res && res.ok) {
+                    doctors = res.data.doctors || [];
+                    console.log(`Loaded ${doctors.length} doctors.`);
+                    
+                    const noDocsAlert = document.getElementById('no-doctors-alert');
+                    if (noDocsAlert) {
+                        if (doctors.length === 0) noDocsAlert.classList.remove('d-none');
+                        else noDocsAlert.classList.add('d-none');
+                    }
+                    
+                    resetDoctorFilter();
+                } else {
+                    console.error('Failed to load doctors:', res?.data?.message || 'Unknown error');
+                    showToast('Failed to load doctors list', 'error');
+                    document.getElementById('doctor_id').innerHTML = '<option value="">— Error loading doctors —</option>';
+                }
+            } catch (err) {
+                console.error('Error in loadDoctors:', err);
+                showToast('Network error loading doctors', 'error');
+                document.getElementById('doctor_id').innerHTML = '<option value="">— Network error —</option>';
+            }
+        }
+
+        document.getElementById('doctor_id').addEventListener('change', e => {
+            const d = doctors.find(x => x.doctor_id == e.target.value);
+            const infoEl = document.getElementById('doctor-info');
+            if (d) {
+                infoEl.classList.remove('d-none');
+                document.getElementById('doc-name').textContent = 'Dr. ' + d.name;
+                document.getElementById('doc-spec').textContent = d.specialization;
+                document.getElementById('doc-clinic').textContent = d.clinic_name || 'No Clinic';
+                document.getElementById('doc-avatar').textContent = d.name.charAt(0).toUpperCase();
+            } else {
+                infoEl.classList.add('d-none');
+            }
+        });
+
+        document.getElementById('appt-form').addEventListener('submit', async e => {
+            e.preventDefault();
+            const body = {
+                doctor_id: document.getElementById('doctor_id').value,
+                appointment_date: document.getElementById('appointment_date').value,
+                notes: document.getElementById('notes').value.trim(),
+                symptoms: document.getElementById('symptoms').value.trim(),
+            };
+            if (!body.doctor_id || !body.appointment_date) {
+                showToast('Select doctor and date', 'warning'); return;
+            }
+            document.getElementById('btn-spinner').classList.remove('d-none');
+            const res = await apiFetch('/appointments/book', { method: 'POST', body: JSON.stringify(body) });
+            document.getElementById('btn-spinner').classList.add('d-none');
+
+            if (res?.ok) {
+                const { triage, queue, email } = res.data;
+                e.target.reset();
+                document.getElementById('triage-result-container').style.display = '';
+                document.getElementById('triage-result-container').innerHTML = `
+                    <div class="triage-card ${triage.isEmergency ? 'emergency' : 'routine'}">
+                        <div class="triage-icon">${triage.isEmergency ? '🚨' : '✅'}</div>
+                        <div><b>Triage: ${triage.isEmergency ? 'EMERGENCY' : 'Routine'}</b><br><small>${triage.triageResult}</small></div>
+                    </div>`;
+                document.getElementById('queue-token-container').style.display = '';
+                document.getElementById('queue-token-container').innerHTML = `
+                    <div class="queue-token-card">
+                        <b>Token: ${queue.token}</b><br>Position: #${queue.position}
+                    </div>`;
+                showToast('Booked!', 'success');
+                loadMyAppointments();
+            } else {
+                showToast(res?.data?.message || 'Failed', 'error');
+            }
+        });
+
+        async function loadMyAppointments() {
+            const res = await apiFetch('/appointments/list');
+            const el = document.getElementById('my-appointments');
+            if (res?.ok && res.data.appointments.length > 0) {
+                el.innerHTML = res.data.appointments.map(a => `
+                    <div class="py-2 border-bottom">
+                        <div class="d-flex justify-content-between">
+                            <b>Dr. ${a.doctor_name}</b>
+                            <span class="badge bg-primary">${a.status}</span>
+                        </div>
+                        <div class="small text-muted">${new Date(a.appointment_date).toLocaleString()}</div>
+                    </div>`).join('');
+            } else {
+                el.innerHTML = '<div class="text-center p-3 small text-muted">No appointments</div>';
+            }
+        }
+
+        loadDoctors();
+        initMap();
+        loadMyAppointments();
+    </script>
+</body>
+
+</html>

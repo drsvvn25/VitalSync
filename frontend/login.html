@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login – VitalSync</title>
+    <meta name="description" content="Login to VitalSync Health Management System.">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+    <div class="auth-page">
+        <div class="auth-card">
+            <div class="text-center mb-4">
+                <a href="index.html" class="auth-logo d-block text-decoration-none">💙 Vital<span>Sync</span></a>
+                <p class="text-muted small mt-1">Secure Health Data Management</p>
+            </div>
+
+            <h5 class="fw-700 mb-1">Welcome Back</h5>
+            <p class="text-muted small mb-3">Sign in to your account to continue.</p>
+
+            <!-- Alert Box -->
+            <div id="alert-box" class="alert d-none" role="alert"></div>
+
+            <form id="login-form" novalidate>
+                <div class="mb-3">
+                    <label class="form-label fw-500 small" for="email">Email Address</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0"><i
+                                class="fas fa-envelope text-muted"></i></span>
+                        <input type="email" id="email" name="email" autocomplete="email"
+                            class="form-control border-start-0" placeholder="doctor@hospital.com" required>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between">
+                        <label class="form-label fw-500 small" for="password">Password</label>
+                    </div>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0"><i
+                                class="fas fa-lock text-muted"></i></span>
+                        <input type="password" id="password" name="password" autocomplete="current-password"
+                            class="form-control border-start-0" placeholder="••••••••" required>
+                        <button type="button" class="input-group-text bg-light border-start-0" id="toggle-pwd"
+                            aria-label="Toggle password visibility">
+                            <i class="fas fa-eye text-muted"></i>
+                        </button>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-vs-primary w-100 py-2 mt-1" id="login-btn">
+                    <span id="btn-text">Sign In</span>
+                    <span id="btn-spinner" class="spinner-border spinner-border-sm ms-2 d-none"></span>
+                </button>
+            </form>
+
+            <hr class="my-3">
+
+            <p class="text-center mt-3 small text-muted">
+                Don't have an account? <a href="register.html" class="text-primary fw-600">Register here</a>
+            </p>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/auth.js"></script>
+    <script>
+        // Redirect if already logged in
+        if (isLoggedIn()) redirectByRole(getUser().role);
+
+        const form = document.getElementById('login-form');
+        const alertBox = document.getElementById('alert-box');
+        const btnText = document.getElementById('btn-text');
+        const btnSpinner = document.getElementById('btn-spinner');
+
+        function showAlert(msg, type = 'danger') {
+            alertBox.className = `alert alert-${type}`;
+            alertBox.textContent = msg;
+            alertBox.classList.remove('d-none');
+        }
+
+
+        // Toggle password visibility
+        document.getElementById('toggle-pwd').addEventListener('click', function () {
+            const pwd = document.getElementById('password');
+            const icon = this.querySelector('i');
+            if (pwd.type === 'password') {
+                pwd.type = 'text'; icon.classList.replace('fa-eye', 'fa-eye-slash');
+            } else {
+                pwd.type = 'password'; icon.classList.replace('fa-eye-slash', 'fa-eye');
+            }
+        });
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+
+            if (!email || !password) { showAlert('Please enter email and password.'); return; }
+
+            btnText.textContent = 'Signing in…';
+            btnSpinner.classList.remove('d-none');
+            alertBox.classList.add('d-none');
+
+            try {
+                const res = await apiFetch('/auth/login', {
+                    method: 'POST',
+                    body: JSON.stringify({ email, password }),
+                });
+
+                if (!res) return;
+                if (res.ok) {
+                    saveAuth(res.data.token, res.data.user);
+                    showAlert('Login successful! Redirecting…', 'success');
+                    setTimeout(() => redirectByRole(res.data.user.role), 800);
+                } else {
+                    showAlert(res.data.message || 'Invalid credentials.');
+                }
+            } catch (err) {
+                showAlert('Server unreachable. Is the backend running?');
+            } finally {
+                btnText.textContent = 'Sign In';
+                btnSpinner.classList.add('d-none');
+            }
+        });
+    </script>
+</body>
+
+</html>
